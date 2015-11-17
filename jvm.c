@@ -14,7 +14,7 @@
 
 /*==========================================*/
 // função jvmStart
-void	jvmStart(FILE * main_class, int num_args, char * args){
+void	jvmStart(FILE * main_class, int num_args, char * args[]){
 
 	jvmLoading(main_class);
 
