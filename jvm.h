@@ -16,7 +16,7 @@
 
 
 
-void	jvmStart(FILE *, int, char *);
+void	jvmStart(FILE *, int, char **);
 void	jvmLoading(FILE *);
 
 
