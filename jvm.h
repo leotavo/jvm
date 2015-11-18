@@ -57,7 +57,6 @@ typedef	struct jvm{
 /*==========================================*/
 
 
-<<<<<<< HEAD
 void	jvmStart(FILE *, int, char **);
 void	classLoading(FILE *, ClassFile **);
 void	classLinking(ClassFile **);
@@ -66,11 +65,6 @@ void	classLinkingPreparation(ClassFile **);
 void	classLinkingResolution(ClassFile **);
 void	classInitialization(ClassFile **);
 void	jvmExit();
-=======
-
-void	jvmStart(FILE *, int, char **);
-void	jvmLoading(FILE *);
->>>>>>> 97f251dd3f4937832a6d3f4d1f34f33cd7f3d939
 
 
 
