@@ -16,6 +16,7 @@
 
 /*==========================================*/
 // função jvmStart
+<<<<<<< HEAD
 void	jvmStart(FILE * main_class_binary_file, int num_args, char * args[]){
 /*
 https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#16491
@@ -28,6 +29,11 @@ https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#19042
 	
 	classLoading(main_class, &main_cf);
 	classLinking(&main_cf);
+=======
+void	jvmStart(FILE * main_class, int num_args, char * args[]){
+
+	jvmLoading(main_class);
+>>>>>>> 97f251dd3f4937832a6d3f4d1f34f33cd7f3d939
 
 }// fim da função jvmStart
 
