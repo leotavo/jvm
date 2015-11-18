@@ -18,7 +18,7 @@
 //	TIPOS
 
 
-typedef	u1	INSTRUCTION;
+typedef	u1	OPCODE;
 typedef char	TYPE;
 typedef	int8_t	s1;
 typedef int16_t	s2;
@@ -29,7 +29,7 @@ typedef	int64_t	s8;
 #define		CHAR		C
 #define		DOUBLE		D
 #define		FLOAT		F
-#define		INT		I
+#define		INT			I
 #define		LONG		J
 #define		REF_INST	L
 #define		SHORT		S
@@ -40,61 +40,73 @@ typedef	int64_t	s8;
 
 // FRAME
 typedef	struct frame{
-	/* data */
+	u4			* local_variables;
+	u4			* operand_stack;
+	cp_info		* current_class_constant_pool;
+	VALUE		return_value;
 }FRAME;
 
 // THREAD
 typedef	struct thread{
-	INSTRUCTION	* program_counter;	// https://docs.oracle.com/javase/specs/jvms/se6/html/Overview.doc.html#6648
+	OPCODE		* program_counter;	// https://docs.oracle.com/javase/specs/jvms/se6/html/Overview.doc.html#6648
 	FRAME		* jvm_stack;		// https://docs.oracle.com/javase/specs/jvms/se6/html/Overview.doc.html#6654
 }THREAD;
 
-// CLASS_INSTANCE
-typedef	struct class_instance{
+// OBJECT
+typedef	struct object{
 	/* data */
-}CLASS_INSTANCE;
+}OBJECT;
 
 typedef	struct value{
 	TYPE	type;
 	union{
-		struct{
+		struct{// BYTE
 			s1	byte;
 		}B;
 		
-		struct{
+		struct{// SHORT
 			s2	short_;
 		}S;
 		
-		struct{
+		struct{// INTEGER
 			s4	integer;
 		}I;
 		
-		struct{
-			s8	long_;
-		}L;
+		struct{// LONG
+			u4	long_high_bytes;
+			u4	long_low_bytes;
+		}J;
 		
-		struct{
+		struct{// FLOAT
 			u4	float_;
 		}F;
 		
-		struct{
-			u4	high_bytes;
-			u4	low_bytes;
+		struct{// DOUBLE
+			u4	double_high_bytes;
+			u4	double_low_bytes;
 		}D;
 		
-		struct{
+		struct{// CHAR
 			u2	char_;			
 		}C;
 		
-		struct{
-			
-		}R;
+		struct{// boolean
+			u1	boolean;			
+		}C;
+		
+		struct{// REFERENCE
+			OBJECT	* reference;
+		}L;
+		
+		struct{// RETURN ADDRESS
+			OPCODE	* return_address;
+		}
 	}u;
 }VALUE;
 
 // HEAP_AREA
 typedef	struct heap_area{	// https://docs.oracle.com/javase/specs/jvms/se6/html/Overview.doc.html#15730
-	CLASS_INSTANCE	* objects;
+	OBJECT		* objects;
 	VALUE		* arrays;
 }HEAP_AREA;
 
