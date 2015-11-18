@@ -17,8 +17,7 @@
 /*==========================================*/
 //	TIPOS
 
-
-typedef	u1	OPCODE;
+typedef	u1		OPCODE;
 typedef char	TYPE;
 typedef	int8_t	s1;
 typedef int16_t	s2;
@@ -36,27 +35,7 @@ typedef	int64_t	s8;
 #define		BOOLEAN		Z
 #define		REF_ARRAY	[
 
-
-
-// FRAME
-typedef	struct frame{
-	u4			* local_variables;
-	u4			* operand_stack;
-	cp_info		* current_class_constant_pool;
-	VALUE		return_value;
-}FRAME;
-
-// THREAD
-typedef	struct thread{
-	OPCODE		* program_counter;	// https://docs.oracle.com/javase/specs/jvms/se6/html/Overview.doc.html#6648
-	FRAME		* jvm_stack;		// https://docs.oracle.com/javase/specs/jvms/se6/html/Overview.doc.html#6654
-}THREAD;
-
-// OBJECT
-typedef	struct object{
-	/* data */
-}OBJECT;
-
+// VALUE
 typedef	struct value{
 	TYPE	type;
 	union{
@@ -104,6 +83,25 @@ typedef	struct value{
 	}u;
 }VALUE;
 
+// FRAME
+typedef	struct frame{
+	u4			* local_variables;
+	u4			* operand_stack;
+	cp_info		* current_class_constant_pool;
+	VALUE		return_value;
+}FRAME;
+
+// THREAD
+typedef	struct thread{
+	OPCODE		* program_counter;	// https://docs.oracle.com/javase/specs/jvms/se6/html/Overview.doc.html#6648
+	FRAME		* jvm_stack;		// https://docs.oracle.com/javase/specs/jvms/se6/html/Overview.doc.html#6654
+}THREAD;
+
+// OBJECT
+typedef	struct object{
+	/* data */
+}OBJECT;
+
 // HEAP_AREA
 typedef	struct heap_area{	// https://docs.oracle.com/javase/specs/jvms/se6/html/Overview.doc.html#15730
 	OBJECT		* objects;
@@ -112,7 +110,10 @@ typedef	struct heap_area{	// https://docs.oracle.com/javase/specs/jvms/se6/html/
 
 // CLASS_DATA
 typedef	struct class_data{
-	ClassFile	* cf;
+	// classloader_reference;
+	cp_info		* runtime_constant_pool;
+	field_info	* field_data;
+	method_info	* method_data;
 	
 }CLASS_DATA;
 
