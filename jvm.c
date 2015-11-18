@@ -55,7 +55,18 @@ https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#22574
 // função classLinkingVerification
 void	classLinkingVerification(ClassFile * cf, JVM * jvm){
 /*	A IMPLEMENTAR
-
+https://www.artima.com/insidejvm/ed2/security3.html
+Structural Checks on The Classfile
+- magic number = 0xCAFEBABE
+- major/minor version supported = <= java 1.2
+- tipo e tamanho dos componentes do classfile (bytes truncados ou extras)
+Semantic Checks on the Type Data
+- verificar se um componente do classfile está bem formado. (exemplo: descritor de um método);
+- verificações de classe:
+-- toda classe, exceto Object, tem q ter uma superclasse;
+-- classe final não é subclasse; método final não é sobrecarregado
+- entradas válidas da Constant Pool (índices referem-se ao tipo correto)
+- verificação de regras da linguagem java que deveriam ter sido vistas em tempo de compilação.
 */
 }// fim da função classLinkingVerication
 /*==========================================*/
@@ -78,6 +89,7 @@ void	classInitialization(ClassFile * cf, JVM * jvm){
 /*	A IMPLEMENTAR
 https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#19075
 https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#24237
+
 */
 }// fim da função classInitialization
 /*==========================================*/
