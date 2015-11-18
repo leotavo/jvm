@@ -21,19 +21,6 @@ no .class na struct ClassFile.
 #include	"info.h"
 
 /*======================================================*/
-//	DESCRITORES DE FIELD
-#define		BYTE			B
-#define		CHAR			C
-#define		DOUBLE			D
-#define		FLOAT			F
-#define		INT			I
-#define		LONG			J
-#define		REF_INST		L
-#define		SHORT			S
-#define		BOOLEAN			Z
-#define		REF_ARRAY		[
-
-/*======================================================*/
 //	ACCESS FLAGS
 
 /* Access Flags de Classe ou Interface */

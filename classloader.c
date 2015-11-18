@@ -259,7 +259,6 @@ void		setFields(ClassFile * cf, FILE * fi){
 // le e armazena os métodos do ClassFile
 void		setMethods(ClassFile * cf, FILE * fi){
 	cf->methods_count = u2Read(fi);
-	int i = 0;
 	cf->methods = (method_info *) malloc((cf->methods_count)*sizeof(method_info));
 	for(method_info * mt_in = cf->methods; mt_in < (cf->methods + cf->methods_count); mt_in++){
 		mt_in->access_flags = u2Read(fi);
