@@ -16,7 +16,7 @@
 
 /*==========================================*/
 // função jvmStart
-void	jvmStart(FILE * main_class_binary_file, int num_args, char * args[]){
+void	jvmStart(char * class_filename, int num_args, char * args[]){
 /*
 https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#16491
 https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#19042
@@ -27,19 +27,26 @@ https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#19042
 	ClassFile	* main_classfile;
 	main_classfile = newClassFile();
 	
-	classLoading(main_class_binary_file, main_classfile, jvm);
+	classLoading(class_filename, main_classfile, jvm);
 	classLinking(main_classfile, jvm);
 	classInitialization(main_classfile, jvm);
+	
+	// INTERPRETADOR
+	
 	classUnloading(main_classfile, jvm);
 	jvmExit(jvm);
 
 }// fim da função jvmStart
 /*==========================================*/
 // função classLoading
-void	classLoading(FILE * bf, ClassFile * cf, JVM * jvm){
+void	classLoading(char * class_filename, ClassFile * cf, JVM * jvm){
 /*	A IMPLEMENTAR
 Loading: finding and importing the binary data for a type
+The loading process consists of three basic activities. To load a type, the Java virtual machine must:
 
+given the type's fully qualified name, produce a stream of binary data that represents the type
+parse the stream of binary data into internal data structures in the method area
+create an instance of class java.lang.Class that represents the type
 
 
 
