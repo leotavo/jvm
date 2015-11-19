@@ -23,11 +23,14 @@ https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#19042
 */	
 	JVM	* jvm;
 	jvm = (JVM *) malloc(sizeof(JVM));
+	jvm->method_area = NULL;
+	jvm->threads = NULL;
+	jvm->heap = (HEAP_AREA *) malloc(sizeof(HEAP_AREA);
 	
 	ClassFile	* main_classfile;
-	main_classfile = newClassFile();
+		
+	classLoading(class_filename, &main_classfile, NULL, jvm);
 	
-	classLoading(class_filename, main_classfile, jvm);
 	classLinking(main_classfile, jvm);
 	classInitialization(main_classfile, jvm);
 	
@@ -39,20 +42,75 @@ https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#19042
 }// fim da função jvmStart
 /*==========================================*/
 // função classLoading
-void	classLoading(char * class_filename, ClassFile * cf, JVM * jvm){
+void	classLoading(char * class_filename, ClassFile ** cf, CLASS_DATA * classloader, JVM * jvm){
+	
 /*	A IMPLEMENTAR
 Loading: finding and importing the binary data for a type
 The loading process consists of three basic activities. To load a type, the Java virtual machine must:
 
-given the type's fully qualified name, produce a stream of binary data that represents the type
-parse the stream of binary data into internal data structures in the method area
+given the type's fully qualified name, produce a stream of binary data that represents the type - OK
+parse the stream of binary data into internal data structures in the method area - OK
 create an instance of class java.lang.Class that represents the type
-
-
-
-Initialization: invoking Java code that initializes class variables to their proper starting values.
-https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#19175
 */
+	// CRIANDO O CLASSFILE.
+	FILE	* class_binary_file;
+	class_binary_file = fopen(class_filename, "r");
+	if(!class_binary_file){
+		// LANÇA EXCEÇÃO ARQUIVO.CLASS
+		exit(EXIT_FAILURE);
+	}
+	else{
+		cf = loadClassFile(class_binary_file);
+	}
+	
+	// CRIANDO O CLASS_DATA
+	CLASS_DATA	* cd = (CLASS_DATA *) malloc(sizeof(CLASS_DATA));
+	cd->prox = jvm->method_area;
+	jvm->method_area = cd;
+	
+	if(!classloader){
+		cd->classloader_reference = cd;
+	}
+	else{
+		cd->classloader_reference = classloader;
+	}
+	cd->classfile = cf;
+	cd->runtime_constant_pool = cf->constant_pool;
+	cd->field_data = cd->fields;
+	cd->method_data = cd->methods;
+	
+	// CRIANDO OBJECT
+		OBJECT	* obj = (OBJECT *) malloc(sizeof(OBJECT));
+		obj->prox = (jvm->heap)->objects;
+		(jvm->heap)->objects = obj;
+		obj->class_data_reference = cd;
+		cd->instance_class = obj;
+		
+	if(!(cd->classfile)->fields_count){
+		cd->class_variables = NULL;
+	}
+	else{
+		
+		
+		// CRIANDO CLASS_VARIABLES E INSTANCE_VARIABLES
+		for(u2 i = 0; i < (cd->classfile)->fields_count; i++){
+			VARIABLE	* var = (VARIABLE *) malloc(sizeof(VARIABLE));
+			var->field_reference = cd->field_data + i;
+			VALUE	* value = (VALUE *) malloc(sizeof(VALUE));
+			// acessar descriptor_index do field para definir o tipo de value
+			// verificar atributo ConstantValue do field para inicializar
+		 if((cd->field_data + i)->access_flags | ACC_STATIC){ // CLASS_VARIABLES
+			var->prox = cd->class_variables;
+			cd->class_variables = var;
+		 }
+		 else{ // INSTANCE_VARIABLES
+		 	var->prox = obj->instance_variables;
+			obj->instance_variables = var;
+		}
+		}		
+	}
+	
+	
 }// fim da função classLoading
 /*==========================================*/
 // função classLinking
@@ -115,7 +173,8 @@ void	classInitialization(ClassFile * cf, JVM * jvm){
 /*	A IMPLEMENTAR
 https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#19075
 https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#24237
-
+Initialization: invoking Java code that initializes class variables to their proper starting values.
+https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#19175
 */
 }// fim da função classInitialization
 /*==========================================*/
