@@ -50,7 +50,7 @@ The loading process consists of three basic activities. To load a type, the Java
 
 given the type's fully qualified name, produce a stream of binary data that represents the type - OK
 parse the stream of binary data into internal data structures in the method area - OK
-create an instance of class java.lang.Class that represents the type
+create an instance of class java.lang.Class that represents the type - OK
 */
 	// CRIANDO O CLASSFILE.
 	FILE	* class_binary_file;
@@ -67,6 +67,8 @@ create an instance of class java.lang.Class that represents the type
 	CLASS_DATA	* cd = (CLASS_DATA *) malloc(sizeof(CLASS_DATA));
 	cd->prox = jvm->method_area;
 	jvm->method_area = cd;
+	cd->class_variables = NULL;
+	cd->instance_class = NULL;
 	
 	if(!classloader){
 		cd->classloader_reference = cd;
@@ -84,7 +86,9 @@ create an instance of class java.lang.Class that represents the type
 		obj->prox = (jvm->heap)->objects;
 		(jvm->heap)->objects = obj;
 		obj->class_data_reference = cd;
+		obj->instance_variables = NULL;
 		cd->instance_class = obj;
+		
 		
 	if(!(cd->classfile)->fields_count){
 		cd->class_variables = NULL;
