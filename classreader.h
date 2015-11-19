@@ -1,4 +1,4 @@
-// arquivo classloader.h
+// arquivo classreader.h
 
 
 /*======================================================*/
@@ -10,8 +10,8 @@ no .class na struct ClassFile.
 */
 /*======================================================*/
 
-#ifndef	CLASSLOADER_H
-#define CLASSLOADER_H
+#ifndef	CLASSREADER_H
+#define CLASSREADER_H
 
 /*======================================================*/
 //	INCLUDES

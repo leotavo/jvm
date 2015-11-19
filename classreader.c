@@ -1,4 +1,4 @@
-// classloader.c
+// classreader.c
 
 /*======================================================*/
 /* 	DESCRIÇÃO
@@ -8,7 +8,7 @@
 /*======================================================*/
 //	INCLUDES
 
-#include	"classloader.h"
+#include	"classreader.h"
 #include	<stdlib.h>
 #include	<inttypes.h>
 #include	<string.h>

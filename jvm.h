@@ -12,7 +12,7 @@
 #define		JVM_H
 /*==========================================*/
 //	INCLUDES
-#include	"classloader.h"
+#include	"classreader.h"
 #include	<stdio.h>
 /*==========================================*/
 //	TIPOS
@@ -28,12 +28,18 @@ typedef	int64_t	s8;
 #define		CHAR		C
 #define		DOUBLE		D
 #define		FLOAT		F
-#define		INT			I
+#define		INT		I
 #define		LONG		J
 #define		REF_INST	L
 #define		SHORT		S
 #define		BOOLEAN		Z
 #define		REF_ARRAY	[
+
+
+// OBJECT
+typedef	struct object;
+typedef	struct array;
+
 
 // VALUE
 typedef	struct value{
@@ -41,52 +47,56 @@ typedef	struct value{
 	union{
 		struct{// BYTE
 			s1	byte;
-		}B;
+		}Byte;
 		
 		struct{// SHORT
 			s2	short_;
-		}S;
+		}Short;
 		
 		struct{// INTEGER
 			s4	integer;
-		}I;
+		}Integer;
 		
 		struct{// LONG
 			u4	long_high_bytes;
 			u4	long_low_bytes;
-		}J;
+		}Long;
 		
 		struct{// FLOAT
 			u4	float_;
-		}F;
+		}Float;
 		
 		struct{// DOUBLE
 			u4	double_high_bytes;
 			u4	double_low_bytes;
-		}D;
+		}Double;
 		
 		struct{// CHAR
-			u2	char_;			
-		}C;
+			u2	char_;
+		}Char;
 		
 		struct{// boolean
-			u1	boolean;			
-		}C;
+			u1	boolean;
+		}Boolean;
 		
-		struct{// REFERENCE
+		struct{// INSTANCE REFERENCE
 			OBJECT	* reference;
-		}L;
+		}InstanceReference;
+		
+		struct{// ARRAY REFERENCE
+			ARRAY	* reference;
+		}ArrayReference;
 		
 		struct{// RETURN ADDRESS
 			OPCODE	* return_address;
-		}
+		}ReturnAddress;
 	}u;
 }VALUE;
 
 // FRAME
 typedef	struct frame{
-	u4			* local_variables;
-	u4			* operand_stack;
+	u4		* local_variables;
+	u4		* operand_stack;
 	cp_info		* current_class_constant_pool;
 	VALUE		return_value;
 }FRAME;
@@ -97,10 +107,7 @@ typedef	struct thread{
 	FRAME		* jvm_stack;		// https://docs.oracle.com/javase/specs/jvms/se6/html/Overview.doc.html#6654
 }THREAD;
 
-// OBJECT
-typedef	struct object{
-	/* data */
-}OBJECT;
+
 
 // HEAP_AREA
 typedef	struct heap_area{	// https://docs.oracle.com/javase/specs/jvms/se6/html/Overview.doc.html#15730
@@ -108,14 +115,31 @@ typedef	struct heap_area{	// https://docs.oracle.com/javase/specs/jvms/se6/html/
 	VALUE		* arrays;
 }HEAP_AREA;
 
+typedef	struct VARIABLE{
+	field_info	* field_reference;
+	VALUE		value;	
+};
+
 // CLASS_DATA
 typedef	struct class_data{
-	// classloader_reference;
+	CLASS_DATA	* classloader_reference;
 	cp_info		* runtime_constant_pool;
 	field_info	* field_data;
 	method_info	* method_data;
-	
+	VARIABLE	* class_variables;
+	OBJECT		* instance_class;
 }CLASS_DATA;
+
+typedef	struct object{
+	CLASS_DATA	* class_data_reference
+	VARIABLE	* instance_variables;
+}OBJECT;
+
+typedef	struct array{
+	CLASS_DATA	* class_data_reference
+	u4		array_length;
+	VALUE		* entry;
+}ARRAY;
 
 // JVM
 typedef	struct jvm{
