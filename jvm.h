@@ -136,6 +136,7 @@ typedef	struct class_data{
 typedef	struct object{
 	CLASS_DATA	* class_data_reference
 	VARIABLE	* instance_variables;
+	struct object	* prox;
 }OBJECT;
 
 typedef	struct array{
