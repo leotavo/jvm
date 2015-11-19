@@ -150,8 +150,8 @@ typedef	struct jvm{
 /*==========================================*/
 
 
-void	jvmStart(FILE *, int, char **);
-void	classLoading(FILE *, ClassFile *, JVM *);
+void	jvmStart(char *, int, char **);
+void	classLoading(char *, ClassFile *, JVM *);
 void	classLinking(ClassFile *, JVM *);
 void	classLinkingVerification(ClassFile *, JVM *);
 void	classLinkingPreparation(ClassFile *, JVM *);
