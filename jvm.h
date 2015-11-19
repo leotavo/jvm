@@ -115,9 +115,10 @@ typedef	struct heap_area{	// https://docs.oracle.com/javase/specs/jvms/se6/html/
 	VALUE		* arrays;
 }HEAP_AREA;
 
-typedef	struct VARIABLE{
+typedef	struct variable{
 	field_info	* field_reference;
 	VALUE		value;	
+	struct variable	* prox;
 };
 
 // CLASS_DATA
