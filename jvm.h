@@ -122,6 +122,7 @@ typedef	struct VARIABLE{
 
 // CLASS_DATA
 typedef	struct class_data{
+	ClassFile	* classfile;
 	CLASS_DATA	* classloader_reference;
 	cp_info		* runtime_constant_pool;
 	field_info	* field_data;
