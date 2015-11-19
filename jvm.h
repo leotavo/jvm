@@ -128,6 +128,7 @@ typedef	struct class_data{
 	method_info	* method_data;
 	VARIABLE	* class_variables;
 	OBJECT		* instance_class;
+	struct class_data	* prox;
 }CLASS_DATA;
 
 typedef	struct object{
