@@ -1,3 +1,4 @@
+
 // classreader.c
 
 /*======================================================*/
@@ -18,22 +19,56 @@
 // retorna 1 byte lido da stream fileInput
 u1		u1Read(FILE * fi){
 	u1	toReturn = getc(fi);
+	if(toReturn == EOF){
+		puts("ClassFormatError");
+		exit(EXIT_FAILURE);
+	}
 	return	toReturn;
 }
 
 // retorna 2 bytes lidos da stream fileInput
 u2		u2Read(FILE * fi){
 	u2	toReturn = getc(fi);
-	toReturn = (toReturn << 8) | (getc(fi));
+	if(toReturn == EOF){
+		puts("ClassFormatError");
+		exit(EXIT_FAILURE);
+	}
+	u1	toReturn2 = getc(fi);
+	if(toReturn2 == EOF){
+		puts("ClassFormatError");
+		exit(EXIT_FAILURE);
+	}
+	toReturn = (toReturn << 8) | toReturn2;
 	return	toReturn;
 }
 
 // retorna 4 bytes lidos da stream fileInput
 u4		u4Read(FILE * fi){
 	u4	toReturn = getc(fi);
-	toReturn = (toReturn << 8) | (getc(fi));
-	toReturn =  (toReturn << 8) | (getc(fi));
-	toReturn =  (toReturn << 8) | (getc(fi));
+	if(toReturn == EOF){
+		puts("ClassFormatError");
+		exit(EXIT_FAILURE);
+	}
+	u1	toReturn2 = getc(fi);
+	if(toReturn2 == EOF){
+		puts("ClassFormatError");
+		exit(EXIT_FAILURE);
+	}
+	toReturn = (toReturn << 8) | toReturn2;
+	
+	toReturn2 = getc(fi);
+	if(toReturn2 == EOF){
+		puts("ClassFormatError");
+		exit(EXIT_FAILURE);
+	}
+	toReturn =  (toReturn << 8) | toReturn2;
+	
+	toReturn2 = getc(fi);
+	if(toReturn2 == EOF){
+		puts("ClassFormatError");
+		exit(EXIT_FAILURE);
+	}
+	toReturn =  (toReturn << 8) | toReturn2;
 	return	toReturn;
 }
 
@@ -145,7 +180,9 @@ ClassFile *	loadClassFile(FILE * fi){
 	setFields(cf, fi);
 	setMethods(cf, fi);
 	setAttributes(NULL, NULL, NULL, cf, fi);
-
+	if(getc(fi) != EOF){
+		puts("ClassFormatError");
+	}
 	return	cf;
 }
 
@@ -159,7 +196,7 @@ ClassFile*	newClassFile(){
 void		setMagic(ClassFile * cf, FILE * fi){
 	cf->magic = u4Read(fi);	
 	if(cf->magic != 0xCAFEBABE){
-		puts("Este arquivo não tem assinatura de um .class\n");
+		puts("ClassFormatError");
 		free(cf);
 		exit(EXIT_FAILURE);
 	}
@@ -169,11 +206,19 @@ void		setMagic(ClassFile * cf, FILE * fi){
 void		setVersion(ClassFile * cf, FILE * fi){
 	cf->minor_version = u2Read(fi);
 	cf->major_version = u2Read(fi);
+	if((cf->major_version > 46) || (cf->major_version < 45) || (cf->major_version == 46 && cf->minor_version != 0)){
+		puts("UnsupportedClassVersionError");
+		exit(EXIT_FAILURE);
+	}
 }
 
 // le e armazena o pool de constantes do ClassFile
 void		setConstantPool(ClassFile * cf, FILE * fi){
-	cf->constant_pool_count = u2Read(fi);	
+	cf->constant_pool_count = u2Read(fi);
+	if(cf->constant_pool_count == 0){
+		puts("VerifyError");
+		exit(EXIT_FAILURE);
+	}
 	cf->constant_pool = (cp_info *) malloc((cf->constant_pool_count -1)*sizeof(cp_info));
 	
 	cp_info * cp;
@@ -214,6 +259,9 @@ void		setConstantPool(ClassFile * cf, FILE * fi){
 					cp->u.Utf8.bytes[i] = u1Read(fi);
 				}
 				break;
+			default:
+				puts("VerifyError");
+				exit(EXIT_FAILURE);
 		}	
 	}
 }

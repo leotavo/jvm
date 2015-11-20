@@ -26,8 +26,10 @@ int	main(int argc, char* argv[]){
 	switch(argc){
 		case	1:
 			puts("Uso: ./jvm arquivo.class [args...]\n");
-			return	0;
 		default:
 			jvmStart(argv[1], argc-2, argv+2);
+			
+	}
+	return	0;
 }// fim da função main()
 /*==========================================*/

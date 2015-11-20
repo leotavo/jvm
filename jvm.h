@@ -14,6 +14,7 @@
 //	INCLUDES
 #include	"classreader.h"
 #include	<stdio.h>
+#include	<stdbool.h>
 /*==========================================*/
 //	TIPOS
 
@@ -24,21 +25,22 @@ typedef int16_t	s2;
 typedef	int32_t	s4;
 typedef	int64_t	s8;
 
-#define		BYTE		B
-#define		CHAR		C
-#define		DOUBLE		D
-#define		FLOAT		F
-#define		INT		I
-#define		LONG		J
-#define		REF_INST	L
-#define		SHORT		S
-#define		BOOLEAN		Z
-#define		REF_ARRAY	[
+// Descritores de Fields
+#define		BYTE		'B'
+#define		CHAR		'C'
+#define		DOUBLE		'D'
+#define		FLOAT		'F'
+#define		INT		'I'
+#define		LONG		'J'
+#define		REF_INST	'L'
+#define		SHORT		'S'
+#define		BOOLEAN		'Z'
+#define		REF_ARRAY	'['
 
 
 // OBJECT
-typedef	struct object;
-typedef	struct array;
+typedef	struct object	obj;
+typedef	struct array	ar;
 
 
 // VALUE
@@ -58,8 +60,8 @@ typedef	struct value{
 		}Integer;
 		
 		struct{// LONG
-			u4	long_high_bytes;
-			u4	long_low_bytes;
+			u4	high_bytes;
+			u4	low_bytes;
 		}Long;
 		
 		struct{// FLOAT
@@ -67,8 +69,8 @@ typedef	struct value{
 		}Float;
 		
 		struct{// DOUBLE
-			u4	double_high_bytes;
-			u4	double_low_bytes;
+			u4	high_bytes;
+			u4	low_bytes;
 		}Double;
 		
 		struct{// CHAR
@@ -80,11 +82,11 @@ typedef	struct value{
 		}Boolean;
 		
 		struct{// INSTANCE REFERENCE
-			OBJECT	* reference;
+			struct object	* reference;
 		}InstanceReference;
 		
 		struct{// ARRAY REFERENCE
-			ARRAY	* reference;
+			struct array	* reference;
 		}ArrayReference;
 		
 		struct{// RETURN ADDRESS
@@ -111,36 +113,37 @@ typedef	struct thread{
 
 // HEAP_AREA
 typedef	struct heap_area{	// https://docs.oracle.com/javase/specs/jvms/se6/html/Overview.doc.html#15730
-	OBJECT		* objects;
+	struct object	* objects;
 	VALUE		* arrays;
 }HEAP_AREA;
 
+// VARIABLE
 typedef	struct variable{
 	field_info	* field_reference;
 	VALUE		value;	
 	struct variable	* prox;
-};
+}VARIABLE;
 
 // CLASS_DATA
 typedef	struct class_data{
-	ClassFile	* classfile;
-	CLASS_DATA	* classloader_reference;
-	cp_info		* runtime_constant_pool;
-	field_info	* field_data;
-	method_info	* method_data;
-	VARIABLE	* class_variables;
-	OBJECT		* instance_class;
+	ClassFile		* classfile;
+	struct class_data	* classloader_reference;
+	cp_info			* runtime_constant_pool;
+	field_info		* field_data;
+	method_info		* method_data;
+	VARIABLE		* class_variables;
+	struct object		* instance_class;
 	struct class_data	* prox;
 }CLASS_DATA;
 
 typedef	struct object{
-	CLASS_DATA	* class_data_reference
+	CLASS_DATA	* class_data_reference;
 	VARIABLE	* instance_variables;
 	struct object	* prox;
 }OBJECT;
 
 typedef	struct array{
-	CLASS_DATA	* class_data_reference
+	CLASS_DATA	* class_data_reference;
 	u4		array_length;
 	VALUE		* entry;
 }ARRAY;
@@ -155,9 +158,11 @@ typedef	struct jvm{
 
 
 void	jvmStart(char *, int, char **);
-void	classLoading(char *, ClassFile *, JVM *);
+void	classLoading(char *, ClassFile **, CLASS_DATA *, JVM *);
 void	classLinking(ClassFile *, JVM *);
 void	classLinkingVerification(ClassFile *, JVM *);
+bool	isFieldDescriptor(cp_info *, u2);
+bool	isMethodDescriptor(cp_info *, u2);
 void	classLinkingPreparation(ClassFile *, JVM *);
 void	classLinkingResolution(ClassFile *, JVM *);
 void	classInitialization(ClassFile *, JVM *);
