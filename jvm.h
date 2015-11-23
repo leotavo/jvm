@@ -161,8 +161,6 @@ void	jvmStart(char *, int, char **);
 void	classLoading(char *, ClassFile **, CLASS_DATA *, JVM *);
 void	classLinking(ClassFile *, JVM *);
 void	classLinkingVerification(ClassFile *, JVM *);
-bool	isFieldDescriptor(cp_info *, u2);
-bool	isMethodDescriptor(cp_info *, u2);
 void	classLinkingPreparation(ClassFile *, JVM *);
 void	classLinkingResolution(ClassFile *, JVM *);
 void	classInitialization(ClassFile *, JVM *);

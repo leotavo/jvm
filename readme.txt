@@ -8,6 +8,47 @@ Windows
 $ jvm.exe arquivo.class [args...]
 args = array de strings, argumento do método main da classe de entrada. (opcional)
 
+Testes Prontos:
+Linux
+$ ./teste.sh
+
+
+SITUAÇÃO ATUAL:
+Loading: 
+- le o arquivo .class principal, e armazena no tipo classfile;
+- cria o class_data dentro da method_area, armazenando as informações do classfile;
+- cria uma instância da classe principal, e armazena no heap;
+- cria variáveis de classe (static fields) e variáveis de instância;
+- verifica erros estruturais no classfile (ausência ou extra bytes, versão suportada)
+=> o que falta: 
+- Herança (herdar campos e metodos de superclasses)
+- inicializar fields com constant_value;
+
+LinkingVerification:
+- verifica erros semânticos no classfile (índices para constantpool, descritores corretos, access_flags, atributos corretos)
+- verifica se superclasse final não é herdada; (TESTAR)
+- verifica se método final não é sobrecarregado; (TESTAR)
+- verifica se toda classe (exceto Object) possui uma superclasse
+=> o que falta:
+- verificar outras regras da linguagem java que possam estar sendo violadas no classfile.
+- bytecodeVerifier: 
+-- verificar se as instruções da JVM estao coerentes quanto aos operandos, pilha, vetor de variaveis locais, etc.
+-- verificar inicialização de variaveis locais;
+-- atribuição de valores à fields
+-- metodo invocado com o correto numero e tipo de argumentos;
+
+=> o que falta:
+Initialization: 
+- inicialização de variáveis de classe;
+Interpreter:
+- começa a executar o método main da classe principal
+LinkingResolution
+- resolve referências simbólicas durante a execução do interpretador
+
+
+
+
+
 Links úteis (Quem tiver algum link útil, coloque aqui):
 
 https://docs.oracle.com/javase/specs/jvms/se6/html/VMSpecTOC.doc.html (Especificação da Oracle)

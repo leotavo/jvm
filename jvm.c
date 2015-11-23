@@ -9,6 +9,7 @@
 /*==========================================*/
 //	INCLUDES
 #include	"jvm.h"
+#include	"verifier.h"
 #include	<stdlib.h>
 #include	<string.h>
 #include	<stdbool.h>
@@ -36,7 +37,6 @@ https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#19042
 	
 /*	puts("DEBUG:\tCLASS LOADING");*/
 	classLoading(class_filename, &main_classfile, NULL, jvm);
-	
 	classLinking(main_classfile, jvm);
 	classInitialization(main_classfile, jvm);
 	
@@ -109,6 +109,9 @@ The loading process consists of three basic activities. To load a type, the Java
 			u2	descriptor_index = (cd->field_data + i)->descriptor_index;
 			value->type = (cd->runtime_constant_pool + descriptor_index - 1)->u.Utf8.bytes[0];
 /*			printf("DEBUG:\tvalue->type = %c\n", value->type);*/
+			if((cd->field_data + i)->access_flags == ACC_STATIC){
+				
+			}
 			switch(value->type){
 				case	BOOLEAN:
 					value->u.Boolean.boolean = 0;
@@ -163,117 +166,10 @@ The loading process consists of three basic activities. To load a type, the Java
 /*==========================================*/
 // função classLinking
 void	classLinking(ClassFile * cf, JVM * jvm){
-
 	classLinkingVerification(cf, jvm);
 	classLinkingPreparation(cf, jvm);
 }// fim da função classLinking
 
-/*==========================================*/
-// função isFieldDescriptor
-bool	isFieldDescriptor(cp_info * cp, u2 index){
-	u2	length = cp->u.Utf8.length;
-	u1	* bytes = cp->u.Utf8.bytes + index;
-	if(index == length){
-		return	true;
-	}
-	switch(*bytes){
-		case	BOOLEAN:
-		case	BYTE:
-		case	CHAR:
-		case	DOUBLE:
-		case	FLOAT:
-		case	INT:
-		case	LONG:
-		case	SHORT:
-			return	isFieldDescriptor(cp, ++index);
-			break;
-		case	REF_INST:
-			;
-			char	* string = (char *) bytes;
-			string[cp->u.Utf8.length - index] = '\0';
-			
-			if((length - index) < 3 || !strchr(string, ';')){
-				return	false;
-			}
-			return	isFieldDescriptor(cp, strchr(string, ';') - string + 2);
-			break;
-		default:
-			return	false;
-	}	
-}
-// fim da função isFieldDescriptor
-
-/*==========================================*/
-// função isMethodDescriptor
-bool	isMethodDescriptor(cp_info * cp, u2 index){
-	u2	length = cp->u.Utf8.length;
-	u1	* bytes = cp->u.Utf8.bytes + index;
-	
-	if(index >= (length - 1)){
-		return false;
-	}
-	
-	bool	returnDescriptor = false;
-	if((*bytes) == ')'){
-		returnDescriptor = true;
-		index++;
-		bytes++;
-		if(((*bytes) == '[')){
-			index++;
-			bytes++;
-		}
-		if(index == length){
-			return false;
-		}	
-	}
-	switch(*bytes){
-		case	BOOLEAN:
-		case	BYTE:
-		case	CHAR:
-		case	DOUBLE:
-		case	FLOAT:
-		case	INT:
-		case	LONG:
-		case	SHORT:
-			if(!returnDescriptor){
-				return	isMethodDescriptor(cp, ++index);
-			}
-			if(index == (length-1)){
-				return	true;
-			}
-			return	false;
-			break;
-		case	REF_INST:
-			;
-			char	* string = (char *) bytes;
-			string[cp->u.Utf8.length - index + 1] = '\0';
-			
-			if((length - index) < 3 || !strchr(string, ';')){
-				return	false;
-			}
-			if(!returnDescriptor){
-				return	isMethodDescriptor(cp, strchr(string, ';') - string + 2);
-			}
-			index += strlen(string);
-			if(index == (length)){
-				return	true;
-			}
-			return	false;
-			break;
-		case	'V':
-			if(!returnDescriptor){
-				return	false;
-			}
-			if(index == (length-1)){
-				return	true;
-			}
-			return	false;
-			break;
-		default:
-			return	false;
-	}	
-}	
-// fim da função isFieldDescriptor
 /*==========================================*/
 // função classLinkingVerification
 void	classLinkingVerification(ClassFile * cf, JVM * jvm){
@@ -285,12 +181,13 @@ Structural Checks on The Classfile
 - major/minor version supported = <= java 1.2 = OK (ClassLoading)
 - tipo e tamanho dos componentes do classfile (bytes truncados ou extras) = OK (ClassLoading)
 Semantic Checks on the Type Data
-- verificar se um componente do classfile está bem formado. (exemplo: descritor de um método);
+- verificar se um componente do classfile está bem formado. (exemplo: descritor de um método); = OK (verifyClassfile)
 - verificações de classe:
--- toda classe, exceto Object, tem q ter uma superclasse;
--- classe final não é subclasse; método final não é sobrecarregado
-- entradas válidas da Constant Pool (índices referem-se ao tipo correto) = OK
-- verificação de regras da linguagem java que deveriam ter sido vistas em tempo de compilação.
+-- toda classe, exceto Object, tem q ter uma superclasse  = OK (verifyClassfile) = TESTAR
+-- classe final não é herdada; = OK (verifyFinal) = TESTAR
+-- método final não é sobrecarregado = OK (verifyFinal) = TESTAR
+- entradas válidas da Constant Pool (índices referem-se ao tipo correto) = OK (verifyConstantPool)
+- verificação de regras da linguagem java que deveriam ter sido vistas em tempo de compilação ????
 Bytecode Verifier:
 - nao importa o caminho de execução, ao chegar num certo bytecode, a operand_stack tem o mesmo numero de itens e mesmo tipo;
 - variavel local nao pode ser acessada antes de conter um valor apropriado.
@@ -298,114 +195,12 @@ Bytecode Verifier:
 - metodos da classe sao sempre invocados com o correto numero e tipo de argumentos.
 - verifica que cada opcode é valido, que tem operandos válidos
 - cada opcode tem operandos válidos na pilha e o no vetor de variaveis locais
-*/	
-	// Verify Constant Pool
-	cp_info	* cp;
-	for(u2	i = 0; i < (cf->constant_pool_count - 1); i++){
-		cp = cf->constant_pool + i;
-		switch(cp->tag){			
-			case	CONSTANT_Class:
-				if((cf->constant_pool + cp->u.Class.name_index - 1)->tag != CONSTANT_Utf8){
-					puts("VerifyError");
-					exit(EXIT_FAILURE);
-				}
-				break;
-			case	CONSTANT_Fieldref:
-			case	CONSTANT_Methodref:
-			case	CONSTANT_InterfaceMethodref:
-				if((cf->constant_pool + cp->u.Ref.class_index - 1)->tag != CONSTANT_Class){
-					puts("VerifyError");
-					exit(EXIT_FAILURE);
-				}
-				if((cf->constant_pool + cp->u.Ref.name_and_type_index - 1)->tag != CONSTANT_NameAndType){
-					puts("VerifyError");
-					exit(EXIT_FAILURE);
-				}
-				break;			
-			case	CONSTANT_String:
-				if((cf->constant_pool + cp->u.String.string_index - 1)->tag != CONSTANT_Utf8){
-					puts("VerifyError");
-					exit(EXIT_FAILURE);
-				}
-				break;
-			case	CONSTANT_Integer:
-			case	CONSTANT_Float:
-			case	CONSTANT_Long:
-			case	CONSTANT_Double:
-				break;
-			case	CONSTANT_NameAndType:
-				if((cf->constant_pool + cp->u.NameAndType.name_index - 1)->tag != CONSTANT_Utf8){
-					puts("VerifyError");
-					exit(EXIT_FAILURE);
-				}
-				cp_info	* cp_aux;
-				if((cp_aux = cf->constant_pool + cp->u.NameAndType.descriptor_index - 1)->tag != CONSTANT_Utf8){
-					puts("VerifyError");
-					exit(EXIT_FAILURE);
-				}
-				if(cp_aux->u.Utf8.length == 0){
-					puts("VerifyError");
-					exit(EXIT_FAILURE);
-				}
-				u2	length = cp_aux->u.Utf8.length;
-				u1	* bytes = cp_aux->u.Utf8.bytes;
-				
-				char	* string = (char *) cp_aux->u.Utf8.bytes;
-				string[cp_aux->u.Utf8.length] = '\0';
-				switch(*bytes){
-					case	BOOLEAN:
-					case	BYTE:
-					case	CHAR:
-					case	DOUBLE:
-					case	FLOAT:
-					case	INT:
-					case	LONG:
-					case	SHORT:
-						if(length != 1){
-							puts("VerifyError");
-							exit(EXIT_FAILURE);
-						}
-						break;
-					case	REF_INST:
-							if(length < 3 || bytes[length-1] != ';'){
-								puts("VerifyError");
-								exit(EXIT_FAILURE);
-							}
-						break;
-					case	REF_ARRAY:
-							if(length < 2){
-								puts("VerifyError");
-								exit(EXIT_FAILURE);
-							}
-							u2	index = 0;
-							while((*bytes) == REF_ARRAY){
-								index++;
-								bytes++;
-							}
-							if(!isFieldDescriptor(cp_aux,index)){
-								puts("VerifyError");
-								exit(EXIT_FAILURE);	
-							}
-						break;
-					case	'(':
-						if(length < 3){
-							puts("VerifyError");
-							exit(EXIT_FAILURE);
-						}
-						if(!isMethodDescriptor(cp_aux,1)){
-							puts("VerifyError");
-							exit(EXIT_FAILURE);	
-						}
-						break;
-					default:
-						puts("VerifyError");
-						exit(EXIT_FAILURE);
-						break;
-				}
-			case	CONSTANT_Utf8:
-				break;	
-		}
-	}
+*/
+	verifyClassfile(cf);
+	verifySuperFinal(cf, jvm);
+	verifyOverrideMethodFinal(cf, jvm);
+	
+	
 }// fim da função classLinkingVerification
 
 

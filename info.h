@@ -132,7 +132,7 @@ typedef struct attribute_info{
 		}Synthetic;
 		
 		struct{
-			u2		source_file_index;
+			u2		sourcefile_index;
 		}SourceFile;
 	}u;
 }attribute_info;

@@ -432,7 +432,7 @@ void		setAttributes(field_info * fd_in, method_info * mt_in, attribute_info * at
 			case	SYNTHETIC:
 				break;
 			case	SOURCE_FILE:
-				attr->u.SourceFile.source_file_index = u2Read(fi);
+				attr->u.SourceFile.sourcefile_index = u2Read(fi);
 				break;
 			case	UNKNOWN:
 				// IGNORANDO ATRIBUTOS DESCONHECIDOS
