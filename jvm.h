@@ -101,12 +101,14 @@ typedef	struct frame{
 	u4		* operand_stack;
 	cp_info		* current_class_constant_pool;
 	VALUE		return_value;
+	struct frame	* prox;
 }FRAME;
 
 // THREAD
 typedef	struct thread{
 	OPCODE		* program_counter;	// https://docs.oracle.com/javase/specs/jvms/se6/html/Overview.doc.html#6648
-	FRAME		* jvm_stack;		// https://docs.oracle.com/javase/specs/jvms/se6/html/Overview.doc.html#6654
+	FRAME		* jvm_stack;// https://docs.oracle.com/javase/specs/jvms/se6/html/Overview.doc.html#6654
+	struct thread	* prox;
 }THREAD;
 
 
@@ -158,13 +160,14 @@ typedef	struct jvm{
 
 
 void	jvmStart(char *, int, char **);
-void	classLoading(char *, ClassFile **, CLASS_DATA *, JVM *);
-void	classLinking(ClassFile *, JVM *);
-void	classLinkingVerification(ClassFile *, JVM *);
-void	classLinkingPreparation(ClassFile *, JVM *);
+void	classLoading(char *, CLASS_DATA **, CLASS_DATA *, JVM *);
+void	classLinking(CLASS_DATA *, JVM *);
+void	classLinkingVerification(CLASS_DATA *, JVM *);
+void	classLinkingPreparation(CLASS_DATA *, JVM *);
 void	classLinkingResolution(ClassFile *, JVM *);
-void	classInitialization(ClassFile *, JVM *);
-void	classUnloading(ClassFile *, JVM *);
+void	classInitialization(CLASS_DATA *, JVM *);
+void	executeMethod(char *, CLASS_DATA *, JVM *);
+void	classUnloading(CLASS_DATA *, JVM *);
 void	jvmExit(JVM *);
 
 

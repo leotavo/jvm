@@ -287,6 +287,7 @@ void	verifyBytecode(attribute_info * attr, ClassFile * cf){
 /*==========================================*/
 // função verifyClassfile
 void	verifyClassfile(ClassFile * cf){
+
 	// checa inconsistências na Constant Pool
 	verifyConstantPool(cf);
 	
@@ -334,24 +335,23 @@ void	verifyClassfile(ClassFile * cf){
 	// checa fields
 	for(u2 i = 0; i < cf->fields_count; i++){
 		u2	name_index = (cf->fields + i)->name_index;
-		cp_aux = cf->constant_pool + name_index;
+		cp_aux = cf->constant_pool + name_index - 1;
 		if(cp_aux->tag != CONSTANT_Utf8){
-			puts("VerifyError");
+			puts("VerifyError: field name_index");
 			exit(EXIT_FAILURE);		
 		}
 		u2	descriptor_index = (cf->fields + i)->descriptor_index;
-		cp_aux = cf->constant_pool + descriptor_index;
+		cp_aux = cf->constant_pool + descriptor_index - 1;
 		if(cp_aux->tag != CONSTANT_Utf8){
-			puts("VerifyError");
+			puts("VerifyError: field descriptor_index");
 			exit(EXIT_FAILURE);		
 		}
-		
 		// checa atributos de fields
 		u2	attributes_count = (cf->fields + i)->attributes_count;
 		for(u2	j = 0; j < attributes_count; j++){
-			cp_aux = cf->constant_pool + ((cf->methods + i)->attributes + j)->attribute_name_index - 1;
+			cp_aux = cf->constant_pool + ((cf->fields + i)->attributes + j)->attribute_name_index - 1;
 			if(cp_aux->tag != CONSTANT_Utf8){
-				puts("VerifyError");
+				puts("VerifyError: field attribute_name_index");
 				exit(EXIT_FAILURE);
 			}
 			switch(getAttributeType(((cf->fields + i)->attributes + j), cf)){
@@ -402,7 +402,6 @@ void	verifyClassfile(ClassFile * cf){
 			switch(getAttributeType(((cf->methods + i)->attributes + j), cf)){
 				case	CODE:
 					verifyBytecode(((cf->methods + i)->attributes + j), cf);
-					
 					// checa atributos do atributo Code
 					u2	code_attributes_count = ((cf->methods + i)->attributes + j)->u.Code.attributes_count;
 					for(u2	k = 0; k < code_attributes_count; k++){
