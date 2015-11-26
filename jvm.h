@@ -126,13 +126,40 @@ typedef	struct variable{
 	struct variable	* prox;
 }VARIABLE;
 
+// FIELD_DATA
+typedef	struct	field_data{
+	cp_info	* field_name; // CONSTANT_Utf8
+	cp_info	* field_type; // CONSTANT_Utf8
+	u2	modifiers;	// access_flags	
+	field_info	* info; 
+}FIELD_DATA
+
+// METHOD_DATA
+typedef	struct	method_data{
+	cp_info	* method_name; // CONSTANT_Utf8
+	TYPE	return_type; // ver no descriptor
+	u2	num_parameters;		// ver no descriptor
+	TYPE	* type_parameters;; // em ordem. ver no descriptor
+	u2	modifiers;	// access_flags	
+	
+	// se o método não é abstrato.
+	u4	code_length;
+	u1	* bytecodes; // instruções da jvm
+	u2	stack_size; // tamanho da pilha de operandos
+	u2	locals_size; // tamanho do vetor de variaveis locais
+	u2	exception_table_length;
+	exception_table_type	* exception_table
+	method_info	* info; 
+}FIELD_DATA
+
 // CLASS_DATA
 typedef	struct class_data{
+	cp_info	* class_name; // CONSTANT_Utf8
 	ClassFile		* classfile;
 	struct class_data	* classloader_reference;
 	cp_info			* runtime_constant_pool;
-	field_info		* field_data;
-	method_info		* method_data;
+	FIELD_DATA		* field_data;
+	METHOD_DATA		* method_data;
 	VARIABLE		* class_variables;
 	struct object		* instance_class;
 	struct class_data	* prox;
