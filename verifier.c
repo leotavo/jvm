@@ -280,7 +280,15 @@ void	verifyAccessFlags(ClassFile * cf){
 void	verifyBytecode(attribute_info * attr, ClassFile * cf){
 // verifica atributo CODE
 // 4.8 Constraints on Java Virtual Machine Code
-
+/*
+Branches must be within the bounds of the code array for the method.
+The targets of all control-flow instructions are each the start of an instruction. In the case of a wide instruction, the wide opcode is considered the start of the instruction, and the opcode giving the operation modified by that wide instruction is not considered to start an instruction. Branches into the middle of an instruction are disallowed.
+No instruction can access or modify a local variable at an index greater than or equal to the number of local variables that its method indicates it allocates.
+All references to the constant pool must be to an entry of the appropriate type. For example: the instruction ldc can be used only for data of type int or float or for instances of class String; the instruction getfield must reference a field.
+The code does not end in the middle of an instruction.
+Execution cannot fall off the end of the code.
+For each exception handler, the starting and ending point of code protected by the handler must be at the beginning of an instruction or, in the case of the ending point, immediately past the end of the code. The starting point must be before the ending point. The exception handler code must start at a valid instruction, and it may not start at an opcode being modified by the wide instruction.
+*/
 
 } // fim da funcao verifyBytecode
 
