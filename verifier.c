@@ -16,6 +16,7 @@ bool	isFieldDescriptor(cp_info * cp, u2 index){
 	if(index == length){
 		return	true;
 	}
+	// FALTA REF_ARRAY
 	switch(*bytes){
 		case	BOOLEAN:
 		case	BYTE:
@@ -25,6 +26,7 @@ bool	isFieldDescriptor(cp_info * cp, u2 index){
 		case	INT:
 		case	LONG:
 		case	SHORT:
+		case	REF_ARRAY:
 			return	isFieldDescriptor(cp, ++index);
 			break;
 		case	REF_INST:
@@ -49,8 +51,9 @@ bool	isMethodDescriptor(cp_info * cp, u2 index){
 	u2	length = cp->u.Utf8.length;
 	u1	* bytes = cp->u.Utf8.bytes + index;
 	
-	if(index >= (length - 1)){
-		return false;
+/*	printf("index = %" PRIu16 " length = %" PRIu16 "\n", index, length);*/
+	if(index == length){
+		return true;;
 	}
 	
 	bool	returnDescriptor = false;
@@ -58,14 +61,16 @@ bool	isMethodDescriptor(cp_info * cp, u2 index){
 		returnDescriptor = true;
 		index++;
 		bytes++;
-		if(((*bytes) == '[')){
+		while(((*bytes) == '[')){
 			index++;
 			bytes++;
 		}
 		if(index == length){
+			puts("erro tipo retorno");
 			return false;
 		}	
 	}
+/*	printf("%c", *bytes);*/
 	switch(*bytes){
 		case	BOOLEAN:
 		case	BYTE:
@@ -75,12 +80,14 @@ bool	isMethodDescriptor(cp_info * cp, u2 index){
 		case	INT:
 		case	LONG:
 		case	SHORT:
+		case	REF_ARRAY:
 			if(!returnDescriptor){
 				return	isMethodDescriptor(cp, ++index);
 			}
 			if(index == (length-1)){
 				return	true;
 			}
+			puts("erro tipo retorno");
 			return	false;
 			break;
 		case	REF_INST:
@@ -89,27 +96,33 @@ bool	isMethodDescriptor(cp_info * cp, u2 index){
 			string[cp->u.Utf8.length - index + 1] = '\0';
 			
 			if((length - index) < 3 || !strchr(string, ';')){
+				puts("Erro ref inst");
 				return	false;
 			}
 			if(!returnDescriptor){
-				return	isMethodDescriptor(cp, strchr(string, ';') - string + 2);
+				return	isMethodDescriptor(cp, strchr(string, ';') - string + 3);
 			}
 			index += strlen(string);
-			if(index == (length)){
+			if(index > length){
 				return	true;
 			}
+			puts(string);
+			puts("erro ref inst retorno");
 			return	false;
 			break;
 		case	'V':
 			if(!returnDescriptor){
+				puts("erro void parametro");
 				return	false;
 			}
 			if(index == (length-1)){
 				return	true;
 			}
+			puts("erro void retorno");
 			return	false;
 			break;
 		default:
+			puts("erro tipo desconhecido");
 			return	false;
 	}	
 }	
@@ -125,7 +138,7 @@ void	verifyConstantPool(ClassFile * cf){
 		switch(cp->tag){			
 			case	CONSTANT_Class:
 				if((cf->constant_pool + cp->u.Class.name_index - 1)->tag != CONSTANT_Utf8){
-					puts("VerifyError");
+					puts("VerifyError: invalid class name index");
 					exit(EXIT_FAILURE);
 				}
 				break;
@@ -133,11 +146,11 @@ void	verifyConstantPool(ClassFile * cf){
 			case	CONSTANT_Methodref:
 			case	CONSTANT_InterfaceMethodref:
 				if((cf->constant_pool + cp->u.Ref.class_index - 1)->tag != CONSTANT_Class){
-					puts("VerifyError");
+					puts("VerifyError: invalid ref class index");
 					exit(EXIT_FAILURE);
 				}
 				if((cf->constant_pool + cp->u.Ref.name_and_type_index - 1)->tag != CONSTANT_NameAndType){
-					puts("VerifyError");
+					puts("VerifyError: invalid name_and_type index");
 					exit(EXIT_FAILURE);
 				}
 				if(cp->tag != CONSTANT_Fieldref){
@@ -145,22 +158,22 @@ void	verifyConstantPool(ClassFile * cf){
 					cp_aux = cf->constant_pool + cp->u.Ref.name_and_type_index - 1;
 					cp_aux = cf->constant_pool + cp_aux->u.NameAndType.descriptor_index - 1;
 					if(cp_aux->tag != CONSTANT_Utf8){
-						puts("VerifyError");
+						puts("VerifyError: invalid field descriptor index");
 						exit(EXIT_FAILURE);
 					}
 					if((cp_aux->u.Utf8).length < 3){
-						puts("VerifyError");
+						puts("VerifyError: invalid field descriptor");
 						exit(EXIT_FAILURE);
 					}
 					if(((cp_aux->u.Utf8).bytes)[0] != '('){
-						puts("VerifyError");
+						puts("VerifyError: invalid field descriptor");
 						exit(EXIT_FAILURE);
 					}
 				}
 				break;			
 			case	CONSTANT_String:
 				if((cf->constant_pool + cp->u.String.string_index - 1)->tag != CONSTANT_Utf8){
-					puts("VerifyError");
+					puts("VerifyError: invalid string index");
 					exit(EXIT_FAILURE);
 				}
 				break;
@@ -171,16 +184,16 @@ void	verifyConstantPool(ClassFile * cf){
 				break;
 			case	CONSTANT_NameAndType:
 				if((cf->constant_pool + cp->u.NameAndType.name_index - 1)->tag != CONSTANT_Utf8){
-					puts("VerifyError");
+					puts("VerifyError: invalid NameAndType name_index");
 					exit(EXIT_FAILURE);
 				}
 				cp_info	* cp_aux;
 				if((cp_aux = cf->constant_pool + cp->u.NameAndType.descriptor_index - 1)->tag != CONSTANT_Utf8){
-					puts("VerifyError");
+					puts("VerifyError: invalid NameAndType descriptor_index");
 					exit(EXIT_FAILURE);
 				}
 				if(cp_aux->u.Utf8.length == 0){
-					puts("VerifyError");
+					puts("VerifyError: invalid descriptor");
 					exit(EXIT_FAILURE);
 				}
 				u2	length = cp_aux->u.Utf8.length;
@@ -198,19 +211,19 @@ void	verifyConstantPool(ClassFile * cf){
 					case	LONG:
 					case	SHORT:
 						if(length != 1){
-							puts("VerifyError");
+							puts("VerifyError: invalid descriptor");
 							exit(EXIT_FAILURE);
 						}
 						break;
 					case	REF_INST:
 							if(length < 3 || bytes[length-1] != ';'){
-								puts("VerifyError");
+								puts("VerifyError: invalid descriptor");
 								exit(EXIT_FAILURE);
 							}
 						break;
 					case	REF_ARRAY:
 							if(length < 2){
-								puts("VerifyError");
+								puts("VerifyError: invalid descriptor");
 								exit(EXIT_FAILURE);
 							}
 							u2	index = 0;
@@ -219,22 +232,22 @@ void	verifyConstantPool(ClassFile * cf){
 								bytes++;
 							}
 							if(!isFieldDescriptor(cp_aux,index)){
-								puts("VerifyError");
+								puts("VerifyError: invalid descriptor");
 								exit(EXIT_FAILURE);	
 							}
 						break;
 					case	'(':
 						if(length < 3){
-							puts("VerifyError");
+							puts("VerifyError: invalid descriptor");
 							exit(EXIT_FAILURE);
 						}
 						if(!isMethodDescriptor(cp_aux,1)){
-							puts("VerifyError");
+							puts("VerifyError: invalid descriptor");
 							exit(EXIT_FAILURE);	
 						}
 						break;
 					default:
-						puts("VerifyError");
+						puts("VerifyError: invalid descriptor");
 						exit(EXIT_FAILURE);
 						break;
 				}
@@ -252,7 +265,7 @@ void	verifyAccessFlags(ClassFile * cf){
 	// Testando flags de classes
 	access_flags = cf->access_flags;
 	if(access_flags & 0xF9CE){
-		puts("VerifyError");
+		puts("VerifyError: invalid class access flags");
 		exit(EXIT_FAILURE);	
 	}
 	
@@ -260,7 +273,7 @@ void	verifyAccessFlags(ClassFile * cf){
 	for(u2 i = 0; i < cf->fields_count; i++){
 		access_flags = (cf->fields + i)->access_flags;
 		if(access_flags & 0xFF20){
-			puts("VerifyError");
+			puts("VerifyError: invalid field access flags");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -269,7 +282,7 @@ void	verifyAccessFlags(ClassFile * cf){
 	for(u2 i = 0; i < cf->methods_count; i++){
 		access_flags = (cf->methods + i)->access_flags;
 		if(access_flags & 0xF2C0){
-			puts("VerifyError");
+			puts("VerifyError: invalid method access flags");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -307,7 +320,7 @@ void	verifyClassfile(ClassFile * cf){
 	// checa this_class
 	cp_aux = cf->constant_pool + cf->this_class - 1;
 	if(cp_aux->tag != CONSTANT_Class){
-		puts("VerifyError");
+		puts("VerifyError: invalid this_class index");
 		exit(EXIT_FAILURE);
 	}
 	
@@ -315,7 +328,7 @@ void	verifyClassfile(ClassFile * cf){
 	if(cf->super_class){
 		cp_aux = cf->constant_pool + cf->super_class - 1;
 		if(cp_aux->tag != CONSTANT_Class){
-			puts("VerifyError");
+			puts("VerifyError: invalid super_class index");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -326,7 +339,7 @@ void	verifyClassfile(ClassFile * cf){
 		char	* string = cp_aux->u.Utf8.bytes;
 		string[cp_aux->u.Utf8.length] = '\0';
 		if(strcmp(string, "java/lang/Object")){
-			puts("VerifyError");
+			puts("VerifyError: Without superclass");
 			exit(EXIT_FAILURE);		
 		}
 	}
@@ -335,7 +348,7 @@ void	verifyClassfile(ClassFile * cf){
 	for(u2 i = 0; i < cf->interfaces_count; i++){
 		cp_aux = cf->constant_pool + (*(cf->interfaces + i)) - 1;
 		if(cp_aux->tag != CONSTANT_Class){
-			puts("VerifyError");
+			puts("VerifyError: invalid interface index");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -369,13 +382,13 @@ void	verifyClassfile(ClassFile * cf){
 				case	LINE_NUMBER_TABLE:
 				case	LOCAL_VARIABLE_TABLE:
 				case	SOURCE_FILE:
-					puts("VerifyError");
+					puts("VerifyError: invalid field attribute");
 					exit(EXIT_FAILURE);
 					break;
 				case	DEPRECATED:
 				case	SYNTHETIC:
 					if(((cf->fields + i)->attributes + j)->attribute_length){
-						puts("VerifyError");
+						puts("VerifyError: invalid attribute");
 						exit(EXIT_FAILURE);
 					}
 					break;
@@ -388,14 +401,14 @@ void	verifyClassfile(ClassFile * cf){
 		u2	name_index = (cf->methods + i)->name_index;
 		cp_aux = cf->constant_pool + name_index;
 		if(cp_aux->tag != CONSTANT_Utf8){
-			puts("VerifyError");
+			puts("VerifyError: invalid method name_index");
 			exit(EXIT_FAILURE);		
 		}
 		
 		u2	descriptor_index = (cf->methods + i)->descriptor_index;
 		cp_aux = cf->constant_pool + descriptor_index;
 		if(cp_aux->tag != CONSTANT_Utf8){
-			puts("VerifyError");
+			puts("VerifyError: invalid method descriptor_index");
 			exit(EXIT_FAILURE);		
 		}
 		
@@ -404,7 +417,7 @@ void	verifyClassfile(ClassFile * cf){
 		for(u2	j = 0; j <  attributes_count; j++){
 			cp_aux = cf->constant_pool + ((cf->methods + i)->attributes + j)->attribute_name_index - 1;
 			if(cp_aux->tag != CONSTANT_Utf8){
-				puts("VerifyError");
+				puts("VerifyError: invalid attribute_name_index");
 				exit(EXIT_FAILURE);
 			}
 			switch(getAttributeType(((cf->methods + i)->attributes + j), cf)){
@@ -416,7 +429,7 @@ void	verifyClassfile(ClassFile * cf){
 						attribute_info	* attr = ((cf->methods + i)->attributes + j)->u.Code.attributes + k;
 						cp_aux = cf->constant_pool + attr->attribute_name_index - 1;
 						if(cp_aux->tag != CONSTANT_Utf8){
-							puts("VerifyError");
+							puts("VerifyError: invalid attribute_name_index");
 							exit(EXIT_FAILURE);
 						}
 						switch(getAttributeType(attr, cf)){
@@ -426,7 +439,7 @@ void	verifyClassfile(ClassFile * cf){
 							case	INNER_CLASSES:
 							case	SOURCE_FILE:
 							case	SYNTHETIC:
-								puts("VerifyError");
+								puts("VerifyError: invalid Code's attribute");
 								exit(EXIT_FAILURE);
 								break;
 							case	LINE_NUMBER_TABLE:
@@ -436,17 +449,17 @@ void	verifyClassfile(ClassFile * cf){
 									cp_aux = cf->constant_pool 
 									+ (attr->u.LocalVariableTable.local_variable_table)->name_index;
 									if(cp_aux->tag != CONSTANT_Utf8){
-										puts("VerifyError");
+										puts("VerifyError: invalid local variable table name_index");
 										exit(EXIT_FAILURE);
 									}
 									cp_aux = cf->constant_pool 
 										+ (attr->u.LocalVariableTable.local_variable_table)->descriptor_index;
 									if(cp_aux->tag != CONSTANT_Utf8){
-										puts("VerifyError");
+										puts("VerifyError: invalid local variable table descriptor_index");
 										exit(EXIT_FAILURE);
 									}
 									if(!isFieldDescriptor(cp_aux, 0)){
-										puts("VerifyError");
+										puts("VerifyError: invalid field descriptor");
 										exit(EXIT_FAILURE);
 									}									
 								}
@@ -461,12 +474,12 @@ void	verifyClassfile(ClassFile * cf){
 						u2	exception_index =
 						*(((cf->methods + i)->attributes + j)->u.Exceptions.exception_index_table + k);
 						if(!exception_index){
-							puts("VerifyError");
+							puts("VerifyError: invalid exception index");
 							exit(EXIT_FAILURE);
 						}
 						cp_aux = cf->constant_pool + exception_index - 1;
 						if(cp_aux->tag != CONSTANT_Class){
-							puts("VerifyError");
+							puts("VerifyError: invalid exception index");
 							exit(EXIT_FAILURE);
 						}						
 					}
@@ -475,13 +488,13 @@ void	verifyClassfile(ClassFile * cf){
 				case	LINE_NUMBER_TABLE:
 				case	LOCAL_VARIABLE_TABLE:
 				case	SOURCE_FILE:
-					puts("VerifyError");
+					puts("VerifyError: invalid method attribute");
 					exit(EXIT_FAILURE);
 					break;
 				case	DEPRECATED:
 				case	SYNTHETIC:
 					if(((cf->methods + i)->attributes + j)->attribute_length){
-						puts("VerifyError");
+						puts("VerifyError: invalid method attribute");
 						exit(EXIT_FAILURE);
 					}
 					break;
@@ -493,7 +506,7 @@ void	verifyClassfile(ClassFile * cf){
 	for(u2 i = 0; i < cf->attributes_count; i++){
 		cp_aux = cf->constant_pool + (cf->attributes + i)->attribute_name_index - 1;
 		if(cp_aux->tag != CONSTANT_Utf8){
-			puts("VerifyError");
+			puts("VerifyError: invalid class attribute_name_index");
 			exit(EXIT_FAILURE);
 		}
 		switch(getAttributeType(cf->attributes + i, cf)){
@@ -501,7 +514,7 @@ void	verifyClassfile(ClassFile * cf){
 			case	EXCEPTIONS:
 			case	LINE_NUMBER_TABLE:
 			case	LOCAL_VARIABLE_TABLE:
-				puts("VerifyError");
+				puts("VerifyError: invalid class attribute");
 				exit(EXIT_FAILURE);
 				break;
 			case	INNER_CLASSES:
@@ -510,46 +523,46 @@ void	verifyClassfile(ClassFile * cf){
 				for(u2 j = 0; j < number_of_classes; j++){
 					classes_type	* class = ((cf->attributes + i)->u.InnerClasses.classes + j);
 					if(!(class->inner_class_info_index) || !(class->outer_class_info_index) || !(class->inner_name_index)){
-						puts("VerifyError");
+						puts("VerifyError: invalid inner class index");
 						exit(EXIT_FAILURE);
 					}
 					cp_aux = cf->constant_pool + class->inner_class_info_index - 1;
 					if(cp_aux->tag != CONSTANT_Class){
-						puts("VerifyError");
+						puts("VerifyError: invalid inner_class_info_index");
 						exit(EXIT_FAILURE);
 					}
 					cp_aux = cf->constant_pool + class->outer_class_info_index - 1;
 					if(cp_aux->tag != CONSTANT_Class){
-						puts("VerifyError");
+						puts("VerifyError: invalid outer_class_info_index");
 						exit(EXIT_FAILURE);
 					}
 					cp_aux = cf->constant_pool + class->inner_name_index - 1;
 					if(cp_aux->tag != CONSTANT_Utf8){
-						puts("VerifyError");
+						puts("VerifyError: invalid inner_name_index");
 						exit(EXIT_FAILURE);
 					}
 					u2	access_flags = class->inner_class_access_flags;
 					if(access_flags & 0xF9E0){
-						puts("VerifyError");
+						puts("VerifyError: invalid inner_class_access_flags");
 						exit(EXIT_FAILURE);	
 					}
 				}
 				break;
 			case	SOURCE_FILE:
 				if((cf->attributes + i)->attribute_length != 2){
-					puts("VerifyError");
+					puts("VerifyError: invalid source file attribute");
 					exit(EXIT_FAILURE);				
 				}
 				cp_aux = cf->constant_pool + (cf->attributes + i)->u.SourceFile.sourcefile_index - 1;
 				if(cp_aux->tag != CONSTANT_Utf8){
-					puts("VerifyError");
+					puts("VerifyError: invalid sourcefile_index");
 					exit(EXIT_FAILURE);
 				}
 				break;
 			case	DEPRECATED:
 			case	SYNTHETIC:
 				if((cf->attributes + i)->attribute_length){
-					puts("VerifyError");
+					puts("VerifyError: invalid class attribute");
 					exit(EXIT_FAILURE);				
 				}
 				break;
@@ -571,17 +584,14 @@ CLASS_DATA	* getSuperClass(ClassFile * cf, JVM * jvm){
 			CLASS_DATA	* cd = jvm->method_area;
 			ClassFile	* cf_super = NULL;
 			while(cd){
-				cf_super = cd->classfile;
-				cp_aux = cf_super->constant_pool + cf_super->this_class - 1;
-				cp_aux = cf_super->constant_pool + cp_aux->u.Class.name_index - 1;
-				char	* class_name = cp_aux->u.Utf8.bytes;
-				class_name[cp_aux->u.Utf8.length] = '\0';
-				if(!strcmp(super_name, class_name)){
+				char	* name = (cd->class_name)->u.Utf8.bytes;
+				name[(cd->class_name)->u.Utf8.length] = '\0';
+				if(!strcmp(super_name, name)){
 					return	cd;
 				}
 				else{
 					cd = cd->prox;
-				}
+				}	
 			}
 		}
 	}
@@ -596,7 +606,7 @@ void	verifySuperFinal(ClassFile * cf, JVM * jvm){
 	CLASS_DATA	* cd_super;
 	if(cd_super = getSuperClass(cf, jvm)){	
 		if((cd_super->classfile)->access_flags & ACC_FINAL){
-			puts("VerifyError");
+			puts("VerifyError: final superclass inherited");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -619,7 +629,7 @@ void	verifyOverrideMethodFinal(ClassFile * cf, JVM * jvm){
 				super_method_name[cp_aux->u.Utf8.length] = '\0';
 				if(!strcmp(method_name, super_method_name)){			
 					if(((cd_super->classfile)->methods + i)->access_flags == ACC_FINAL){
-						puts("VerifyError");
+						puts("VerifyError: override final method");
 						exit(EXIT_FAILURE);
 					}
 				}

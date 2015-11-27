@@ -119,27 +119,28 @@ typedef	struct heap_area{	// https://docs.oracle.com/javase/specs/jvms/se6/html/
 	VALUE		* arrays;
 }HEAP_AREA;
 
+// FIELD_DATA
+typedef	struct	field_data{
+	cp_info	* field_name; // CONSTANT_Utf8
+	cp_info	* field_descriptor; // CONSTANT_Utf8
+	TYPE	field_type;
+	u2	modifiers;	// access_flags	
+	field_info	* info; 
+}FIELD_DATA;
+
 // VARIABLE
 typedef	struct variable{
-	field_info	* field_reference;
+	FIELD_DATA	* field_reference;
 	VALUE		value;	
 	struct variable	* prox;
 }VARIABLE;
 
-// FIELD_DATA
-typedef	struct	field_data{
-	cp_info	* field_name; // CONSTANT_Utf8
-	cp_info	* field_type; // CONSTANT_Utf8
-	u2	modifiers;	// access_flags	
-	field_info	* info; 
-}FIELD_DATA
+
 
 // METHOD_DATA
 typedef	struct	method_data{
 	cp_info	* method_name; // CONSTANT_Utf8
-	TYPE	return_type; // ver no descriptor
-	u2	num_parameters;		// ver no descriptor
-	TYPE	* type_parameters;; // em ordem. ver no descriptor
+	cp_info	* method_descriptor; // CONSTANT_Utf8
 	u2	modifiers;	// access_flags	
 	
 	// se o método não é abstrato.
@@ -148,9 +149,9 @@ typedef	struct	method_data{
 	u2	stack_size; // tamanho da pilha de operandos
 	u2	locals_size; // tamanho do vetor de variaveis locais
 	u2	exception_table_length;
-	exception_table_type	* exception_table
+	exception_table_type	* exception_table;
 	method_info	* info; 
-}FIELD_DATA
+}METHOD_DATA;
 
 // CLASS_DATA
 typedef	struct class_data{
@@ -195,6 +196,7 @@ void	classLinkingResolution(ClassFile *, JVM *);
 void	classInitialization(CLASS_DATA *, JVM *);
 void	executeMethod(char *, CLASS_DATA *, JVM *);
 void	classUnloading(CLASS_DATA *, JVM *);
+attribute_info	* getCodeAttribute(METHOD_DATA *, CLASS_DATA *);
 void	jvmExit(JVM *);
 
 

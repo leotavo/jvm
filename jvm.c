@@ -71,7 +71,7 @@ The loading process consists of three basic activities. To load a type, the Java
 	}
 /*	puts("DEBUG:\tCRIANDO CLASS_DATA");*/
 	(*cd) = (CLASS_DATA *) malloc(sizeof(CLASS_DATA));
-	
+	(*cd)->class_name = cf->constant_pool + cf->this_class - 1;	
 	(*cd)->prox = jvm->method_area;
 	jvm->method_area = (*cd);
 	(*cd)->class_variables = NULL;
@@ -85,10 +85,55 @@ The loading process consists of three basic activities. To load a type, the Java
 	}
 	(*cd)->classfile = cf;
 	(*cd)->runtime_constant_pool = cf->constant_pool;
-	(*cd)->field_data = cf->fields;
-	(*cd)->method_data = cf->methods;
 	
+	// armazena informações dos fields
+	(*cd)->field_data = (FIELD_DATA *) malloc(cf->fields_count * sizeof(FIELD_DATA));
+	for(u2 i = 0; i < cf->fields_count; i++){
+		((*cd)->field_data + i)->field_name = cf->constant_pool + (cf->fields + i)->name_index - 1;
+		((*cd)->field_data + i)->field_descriptor = cf->constant_pool + (cf->fields + i)->descriptor_index - 1;
+		((*cd)->field_data + i)->modifiers = (cf->fields + i)->access_flags;
+		((*cd)->field_data + i)->info = (cf->fields + i);
+		if(! isFieldDescriptor(((*cd)->field_data + i)->field_descriptor, 0)){
+			puts("VerifyError: field descriptor");
+			exit(EXIT_FAILURE);
+		}
+		((*cd)->field_data + i)->field_type = *(((*cd)->field_data + i)->field_name)->u.Utf8.bytes;
+	}
+
+	// armazena informações dos métodos
+	(*cd)->method_data = (METHOD_DATA *) malloc(cf->methods_count * sizeof(METHOD_DATA));
+	for(u2 i = 0; i < cf->methods_count; i++){
+		((*cd)->method_data + i)->method_name = cf->constant_pool + (cf->methods + i)->name_index - 1;
+		((*cd)->method_data + i)->method_descriptor = cf->constant_pool + (cf->methods + i)->descriptor_index - 1;
+		((*cd)->method_data + i)->modifiers = (cf->methods + i)->access_flags;
+		((*cd)->method_data + i)->info = (cf->methods + i);
+		if(*(((*cd)->method_data + i)->method_descriptor)->u.Utf8.bytes != '('){
+			puts("VerifyError: method descriptor");
+			exit(EXIT_FAILURE);		
+		}
+		
+		if(! isMethodDescriptor(((*cd)->method_data + i)->method_descriptor, 1)){
+			puts("VerifyError: method descriptor");
+			exit(EXIT_FAILURE);
+		}
+		
+		if(!(((*cd)->method_data + i)->modifiers & ACC_ABSTRACT)){
+			attribute_info	* code_attr = getCodeAttribute((*cd)->method_data + i, *cd);
+			if(!code_attr){
+				puts("VerifyError: No code attribute");
+				exit(EXIT_FAILURE);
+			}
+			((*cd)->method_data + i)->code_length = code_attr->u.Code.code_length;
+			((*cd)->method_data + i)->bytecodes = code_attr->u.Code.code;
+			((*cd)->method_data + i)->stack_size = code_attr->u.Code.max_stack;
+			((*cd)->method_data + i)->locals_size = code_attr->u.Code.max_locals;
+			((*cd)->method_data + i)->exception_table_length = code_attr->u.Code.exception_table_length;
+			((*cd)->method_data + i)->exception_table = code_attr->u.Code.exception_table;			
+		}
+	}	
 }// fim da função classLoading
+
+
 
 /*==========================================*/
 // função classLinking
@@ -153,7 +198,7 @@ Preparation: allocating memory for class variables and initializing the memory t
 			var->field_reference = cd->field_data + i;
 			
 			VALUE	* value = (VALUE *) malloc(sizeof(VALUE));
-			u2	descriptor_index = (cd->field_data + i)->descriptor_index;
+			u2	descriptor_index = ((cd->field_data + i)->info)->descriptor_index;
 			value->type = (cd->runtime_constant_pool + descriptor_index - 1)->u.Utf8.bytes[0];
 /*			printf("DEBUG:\tvalue->type = %c\n", value->type);*/
 			switch(value->type){
@@ -190,10 +235,10 @@ Preparation: allocating memory for class variables and initializing the memory t
 					value->u.ArrayReference.reference = NULL;
 					break;
 				default:
-					puts("VerifyError");
+					puts("VerifyError: Unknown type");
 					exit(EXIT_FAILURE);
 			}
-			u2	access_flags = (cd->field_data + i)->access_flags;
+			u2	access_flags = (cd->field_data + i)->modifiers;
 			if(!(access_flags & ACC_FINAL)){
 				if((access_flags & ACC_STATIC) || ((cd->classfile)->access_flags & ACC_INTERFACE)){		
 /*					puts("DEBUG:\tCLASS_VARIABLE");*/
@@ -251,41 +296,35 @@ Executing the class's class initialization method, if it has one
 				classInitialization(cd_super, jvm);
 			}
 		}
-		execute("<clinit>", cd, jvm);			
+		executeMethod("<clinit>", cd, jvm);			
 	}	
 }// fim da função classInitialization
 
 /*==========================================*/
 // função getMethod
-method_info	* getMethod(char * method_name, CLASS_DATA * cd){
+METHOD_DATA	* getMethod(char * method_name, CLASS_DATA * cd){
 	char *	name;
-	cp_info	* cp_aux;
-	method_info	* method_aux;
 	for(u2	i = 0; i < (cd->classfile)->methods_count; i++){
-		method_aux = cd->method_data + i;
-		cp_aux = method_aux->name_index + (cd->classfile)->constant_pool - 1;
-		name = cp_aux->u.Utf8.bytes;
-		name[cp_aux->u.Utf8.length] = '\0';
+		name = ((cd->method_data + i)->method_name)->u.Utf8.bytes;
+		name[((cd->method_data + i)->method_name)->u.Utf8.length] = '\0';
 		if(!strcmp(method_name, name)){
-			return (cd->method_data + i);
+			return	(cd->method_data + i);
 		}
 	}
-	return	NULL;
-	
-	
+	return	NULL;	
 }// fim da função getMethod
 
 /*==========================================*/
 // função getCodeAttribute
-attribute_info	* getCodeAttribute(method_info * method, CLASS_DATA * cd){
+attribute_info	* getCodeAttribute(METHOD_DATA * method, CLASS_DATA * cd){
 	cp_info	* cp_aux;
 	char	* attribute_name;
-	for(u2	i = 0; i < method->attributes_count; i++){
-		cp_aux = (cd->classfile)->constant_pool + (method->attributes + i)->attribute_name_index - 1;
+	for(u2	i = 0; i < (method->info)->attributes_count; i++){
+		cp_aux = (cd->classfile)->constant_pool + ((method->info)->attributes + i)->attribute_name_index - 1;
 		attribute_name = cp_aux->u.Utf8.bytes;
 		attribute_name[cp_aux->u.Utf8.length] = '\0';
 		if(!strcmp("Code", attribute_name)){
-			return	(method->attributes + i);
+			return	((method->info)->attributes + i);
 		}
 	}
 	return	NULL;
@@ -294,7 +333,7 @@ attribute_info	* getCodeAttribute(method_info * method, CLASS_DATA * cd){
 /*==========================================*/
 // função execute
 void	executeMethod(char * method_name, CLASS_DATA * cd, JVM * jvm){
-	method_info	* method = getMethod(method_name, cd);
+	METHOD_DATA	* method = getMethod(method_name, cd);
 	if(method){
 		attribute_info	* code_attr = getCodeAttribute(method, cd);
 		if(code_attr){

@@ -3,12 +3,12 @@ echo "Attribute.class"
 ./jvm Exemplos/Attribute.class
 echo "ControleRemoto.class"
 ./jvm Exemplos/ControleRemoto.class
-echo "DataStructure$EvenIterator.class"
-./jvm Exemplos/DataStructure$EvenIterator.class
+echo "DataStructure" "$" "EvenIterator.class"
+./jvm Exemplos/DataStructure"$"EvenIterator.class
 echo "DataStructure.class"
 ./jvm Exemplos/DataStructure.class
-echo "DataStructure$Innerclass2.class"
-./jvm Exemplos/DataStructure$Innerclass2.class
+echo "DataStructure" "$" "Innerclass2.class"
+./jvm Exemplos/DataStructure"$"Innerclass2.class
 echo "Entrada.class"
 ./jvm Exemplos/Entrada.class
 echo "ExcepTest.class"
