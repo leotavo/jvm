@@ -16,7 +16,6 @@ bool	isFieldDescriptor(cp_info * cp, u2 index){
 	if(index == length){
 		return	true;
 	}
-	// FALTA REF_ARRAY
 	switch(*bytes){
 		case	BOOLEAN:
 		case	BYTE:
@@ -37,7 +36,8 @@ bool	isFieldDescriptor(cp_info * cp, u2 index){
 			if((length - index) < 3 || !strchr(string, ';')){
 				return	false;
 			}
-			return	isFieldDescriptor(cp, strchr(string, ';') - string + 2);
+			index += strlen(string);
+			return	isFieldDescriptor(cp, index);
 			break;
 		default:
 			return	false;
@@ -70,7 +70,6 @@ bool	isMethodDescriptor(cp_info * cp, u2 index){
 			return false;
 		}	
 	}
-/*	printf("%c", *bytes);*/
 	switch(*bytes){
 		case	BOOLEAN:
 		case	BYTE:
@@ -93,20 +92,22 @@ bool	isMethodDescriptor(cp_info * cp, u2 index){
 		case	REF_INST:
 			;
 			char	* string = (char *) bytes;
-			string[cp->u.Utf8.length - index + 1] = '\0';
+			string[cp->u.Utf8.length - index] = '\0';
+
 			
 			if((length - index) < 3 || !strchr(string, ';')){
 				puts("Erro ref inst");
 				return	false;
 			}
-			if(!returnDescriptor){
-				return	isMethodDescriptor(cp, strchr(string, ';') - string + 3);
-			}
 			index += strlen(string);
-			if(index > length){
+			if(!returnDescriptor){
+				
+				return	isMethodDescriptor(cp, index);
+			}
+			if(index == length){
 				return	true;
 			}
-			puts(string);
+/*			PrintConstantUtf8(cp, stdout);*/
 			puts("erro ref inst retorno");
 			return	false;
 			break;
@@ -122,6 +123,9 @@ bool	isMethodDescriptor(cp_info * cp, u2 index){
 			return	false;
 			break;
 		default:
+			printf("index = %" PRIu16 " length = %" PRIu16 "\n", index, length);
+			printf("%c\n", *bytes);
+			PrintConstantUtf8(cp, stdout);
 			puts("erro tipo desconhecido");
 			return	false;
 	}	
@@ -573,7 +577,6 @@ void	verifyClassfile(ClassFile * cf){
 
 /*==========================================*/
 // função getSuperClass
-
 CLASS_DATA	* getSuperClass(ClassFile * cf, JVM * jvm){
 	if(cf->super_class){
 		cp_info	* cp_aux = cf->constant_pool + cf->super_class - 1;
@@ -582,7 +585,7 @@ CLASS_DATA	* getSuperClass(ClassFile * cf, JVM * jvm){
 		super_name[cp_aux->u.Utf8.length] = '\0';
 		if(strcmp(super_name, "java/lang/Object")){
 			CLASS_DATA	* cd = jvm->method_area;
-			ClassFile	* cf_super = NULL;
+/*			printf("length = %" PRIu16 "\n", (cd->class_name)->u.Utf8.length);*/
 			while(cd){
 				char	* name = (cd->class_name)->u.Utf8.bytes;
 				name[(cd->class_name)->u.Utf8.length] = '\0';

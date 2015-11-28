@@ -10,6 +10,7 @@
 //	INCLUDES
 #include	"jvm.h"
 #include	"verifier.h"
+#include	"interpreter.h"
 #include	<stdlib.h>
 #include	<string.h>
 #include	<stdbool.h>
@@ -19,6 +20,12 @@
 //	MÉTODOS
 
 /*==========================================*/
+
+void	PrintConstantUtf8(cp_info * cp, FILE * out){
+	char	* string = (char *) cp->u.Utf8.bytes;
+	string[cp->u.Utf8.length] = '\0';
+	fprintf(out, "%s", string );
+}
 
 // função jvmStart
 void	jvmStart(char * class_filename, int num_args, char * args[]){
@@ -35,12 +42,26 @@ https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#19042
 	CLASS_DATA	* main_class_data;
 	
 	
-/*	puts("DEBUG:\tCLASS LOADING");*/
+/*	puts("DEBUG:\tCLASS LOADING\n");*/
 	classLoading(class_filename, &main_class_data, NULL, jvm);
+/*	puts("DEBUG:\tCLASS LINKING\n");*/
 	classLinking(main_class_data, jvm);
-	classInitialization(main_class_data, jvm);
 	
-	// INTERPRETADOR
+	// INICIA THREAD PRINCIPAL
+	THREAD		* main_thread = (THREAD *) malloc(sizeof(THREAD));
+	main_thread->program_counter = NULL;
+	main_thread->jvm_stack = NULL;
+	main_thread->prox = NULL;
+	jvm->threads = main_thread;
+	
+/*	puts("DEBUG:\tCLASS INITIALIZATION\n");*/
+	classInitialization(main_class_data, jvm, main_thread);
+	
+	if(main_class_data->modifiers & ACC_ABSTRACT){
+		puts("ERROR: method 'main' not find.");
+		exit(EXIT_FAILURE);
+	}
+	executeMethod("main", main_class_data, jvm, main_thread);
 	
 	classUnloading(main_class_data, jvm);
 	jvmExit(jvm);
@@ -71,11 +92,14 @@ The loading process consists of three basic activities. To load a type, the Java
 	}
 /*	puts("DEBUG:\tCRIANDO CLASS_DATA");*/
 	(*cd) = (CLASS_DATA *) malloc(sizeof(CLASS_DATA));
-	(*cd)->class_name = cf->constant_pool + cf->this_class - 1;	
+	cp_info	* cp_aux = cf->constant_pool + cf->this_class - 1;
+	(*cd)->class_name = cf->constant_pool + cp_aux->u.Class.name_index - 1;
+/*	PrintConstantUtf8((*cd)->class_name, stdout);*/
 	(*cd)->prox = jvm->method_area;
 	jvm->method_area = (*cd);
 	(*cd)->class_variables = NULL;
 	(*cd)->instance_class = NULL;
+
 	
 	if(!classloader){
 		(*cd)->classloader_reference = (*cd);
@@ -84,6 +108,7 @@ The loading process consists of three basic activities. To load a type, the Java
 		(*cd)->classloader_reference = classloader;
 	}
 	(*cd)->classfile = cf;
+	(*cd)->modifiers = ((*cd)->classfile)->access_flags;
 	(*cd)->runtime_constant_pool = cf->constant_pool;
 	
 	// armazena informações dos fields
@@ -94,6 +119,7 @@ The loading process consists of three basic activities. To load a type, the Java
 		((*cd)->field_data + i)->modifiers = (cf->fields + i)->access_flags;
 		((*cd)->field_data + i)->info = (cf->fields + i);
 		if(! isFieldDescriptor(((*cd)->field_data + i)->field_descriptor, 0)){
+/*			PrintConstantUtf8(((*cd)->field_data + i)->field_descriptor, stdout);*/
 			puts("VerifyError: field descriptor");
 			exit(EXIT_FAILURE);
 		}
@@ -274,7 +300,7 @@ char	*	getClassName(CLASS_DATA * cd){
  }
 /*==========================================*/
 // função classInitialization
-void	classInitialization(CLASS_DATA * cd, JVM * jvm){
+void	classInitialization(CLASS_DATA * cd, JVM * jvm, THREAD * thread){
 /*	A IMPLEMENTAR
 Initialization of a class consists of two steps:
 
@@ -287,16 +313,18 @@ Executing the class's class initialization method, if it has one
 		cp_aux = (cd->classfile)->constant_pool + cp_aux->u.Class.name_index - 1;
 		char	* super_class_name = cp_aux->u.Utf8.bytes;
 		super_class_name[cp_aux->u.Utf8.length] = '\0';
-		
+/*		printf("Super class:\t");*/
+/*		PrintConstantUtf8(cp_aux, stdout);*/
+/*		puts("");*/
 		if(strcmp(super_class_name, "java/lang/Object")){
 			CLASS_DATA	* cd_super;
 			if(!(cd_super = getSuperClass(cd->classfile, jvm))){
-				classLoading(super_class_name, &cd_super, cd, jvm);
-				classLinking(cd_super, jvm);
-				classInitialization(cd_super, jvm);
+				classLoading(strcat(super_class_name, ".class"), &cd_super, cd, jvm);
 			}
+			classLinking(cd_super, jvm);
+			classInitialization(cd_super, jvm, thread);
 		}
-		executeMethod("<clinit>", cd, jvm);			
+		executeMethod("<clinit>", cd, jvm, thread);			
 	}	
 }// fim da função classInitialization
 
@@ -332,15 +360,40 @@ attribute_info	* getCodeAttribute(METHOD_DATA * method, CLASS_DATA * cd){
 
 /*==========================================*/
 // função execute
-void	executeMethod(char * method_name, CLASS_DATA * cd, JVM * jvm){
+void	executeMethod(char * method_name, CLASS_DATA * cd, JVM * jvm, THREAD * thread){
+/*	puts("Classe: ");*/
+/*	PrintConstantUtf8(cd->class_name, stdout);*/
+/*	printf("\n\tmétodo %s\n", method_name);*/
 	METHOD_DATA	* method = getMethod(method_name, cd);
 	if(method){
+		if(method->modifiers & ACC_ABSTRACT){
+			puts("ERROR: executing abstract method.");
+			exit(EXIT_FAILURE);
+		}
 		attribute_info	* code_attr = getCodeAttribute(method, cd);
 		if(code_attr){
-		
+			// CRIA NOVO FRAME PRO MÉTODO
+			FRAME	* frame = (FRAME *) malloc(sizeof(FRAME));
+			frame->local_variables = (u4 *) malloc(method->locals_size * sizeof(u4));
+			frame->operand_stack = NULL;
+			frame->current_class_constant_pool = cd->runtime_constant_pool;
+			frame->return_value = NULL;
+			frame->prox = thread->jvm_stack;
+			thread->jvm_stack = frame;
+			
+			interpreter(method, thread, jvm);
+		}
+		else{
+			puts("ERROR: non-abstract method without code attribute.");
+			exit(EXIT_FAILURE);			
 		}
 	}
-	
+	else{
+		if(strcmp(method_name, "<clinit>")){
+			printf("método %s não encontrado.\n", method_name);
+			exit(EXIT_FAILURE);	
+		}
+	}
 }// fim da função execute
 
 /*==========================================*/

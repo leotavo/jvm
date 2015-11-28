@@ -1,4 +1,4 @@
-package interfaceamento;
+package Exemplos;
 
 public class ExemploInterfaceamento {
 

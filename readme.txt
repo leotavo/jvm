@@ -21,8 +21,8 @@ Loading:
 - cria variáveis de classe (static fields) e variáveis de instância;
 - verifica erros estruturais no classfile (ausência ou extra bytes, versão suportada)
 => o que falta: 
-- Herança (herdar campos e metodos de superclasses)
-- inicializar fields com constant_value;
+- Herança (herdar campos e metodos de superclasses) => FAZER EM TEMPO DE EXECUÇÃO, NA CHAMADA DE INSTRUCOES QUE REQUEIRAM FIELDS OU METODOS
+- inicializar fields com constant_value; = FAZER EM TEMPO DE EXECUÇÃO
 
 LinkingVerification:
 - verifica erros semânticos no classfile (índices para constantpool, descritores corretos, access_flags, atributos corretos)
@@ -31,17 +31,19 @@ LinkingVerification:
 - verifica se toda classe (exceto Object) possui uma superclasse
 => o que falta:
 - verificar outras regras da linguagem java que possam estar sendo violadas no classfile.
-- bytecodeVerifier: 
+- bytecodeVerifier: // FAZER EM TEMPO DE EXECUÇÃO
 -- verificar se as instruções da JVM estao coerentes quanto aos operandos, pilha, vetor de variaveis locais, etc.
 -- verificar inicialização de variaveis locais;
 -- atribuição de valores à fields
 -- metodo invocado com o correto numero e tipo de argumentos;
 
-=> o que falta:
 Initialization: 
-- inicialização de variáveis de classe;
+- inicializa a superclasse direta;
+- executa o método construtor da classe; // IGNORAR O METODO <INIT> de java/lang/Object
+
 Interpreter:
 - começa a executar o método main da classe principal
+
 LinkingResolution
 - resolve referências simbólicas durante a execução do interpretador
 

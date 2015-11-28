@@ -21,10 +21,10 @@ echo "ModeloSDX.class"
 ./jvm Exemplos/ModeloSDX.class
 echo "ModeloTV001.class"
 ./jvm Exemplos/ModeloTV001.class
-echo "Volcano/Lava.class"
-./jvm Exemplos/Volcano/Lava.class 
-echo "Volcano/Volcano.class"
-./jvm Exemplos/Volcano/Volcano.class
+echo "Lava.class"
+./jvm Exemplos/Lava.class 
+echo "Volcano.class"
+./jvm Exemplos/Volcano.class
 echo "TV.class"
 ./jvm Exemplos/TV.class
 echo "TestVersion.class"

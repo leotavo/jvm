@@ -5,7 +5,7 @@
  * @Author: Denys W. Xavier
  *************************************************/
 
-package interfaceamento;
+package Exemplos;
 
 public class ModeloTV001 extends TV implements ControleRemoto {
 	public final String MODELO = "TV001";

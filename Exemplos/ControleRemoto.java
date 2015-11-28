@@ -5,7 +5,7 @@
  * @Author: Denys W. Xavier
  *************************************************/
 
-package interfaceamento;
+package Exemplos;
 
 public interface ControleRemoto {
 	/*

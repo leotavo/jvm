@@ -30,7 +30,7 @@ int	main(int argc, char* argv[]){
 			jvmStart(argv[1], argc-2, argv+2);
 			
 	}
-	puts("OK");
+	puts("Método main: OK");
 	return	0;
 }// fim da função main()
 /*==========================================*/

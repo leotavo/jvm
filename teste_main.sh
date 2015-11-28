@@ -1,0 +1,19 @@
+#!/bin/bash
+echo "DataStructure.class"
+./jvm Exemplos/DataStructure.class
+echo "Entrada.class"
+./jvm Exemplos/Entrada.class
+echo "ExcepTest.class"
+./jvm Exemplos/ExcepTest.class
+echo "HelloWorld.class"
+./jvm Exemplos/HelloWorld.class
+echo "Volcano.class"
+./jvm Exemplos/Volcano.class
+echo "TestVersion.class"
+./jvm Exemplos/TestVersion.class
+echo "Teste.class"
+./jvm Exemplos/Teste.class 
+echo "pinheiro.class"
+./jvm Exemplos/pinheiro.class
+echo "Soft.class"
+./jvm Exemplos/Soft.class

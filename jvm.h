@@ -100,7 +100,7 @@ typedef	struct frame{
 	u4		* local_variables;
 	u4		* operand_stack;
 	cp_info		* current_class_constant_pool;
-	VALUE		return_value;
+	VALUE		* return_value;
 	struct frame	* prox;
 }FRAME;
 
@@ -155,8 +155,9 @@ typedef	struct	method_data{
 
 // CLASS_DATA
 typedef	struct class_data{
-	cp_info	* class_name; // CONSTANT_Utf8
+	cp_info			* class_name; // CONSTANT_Utf8
 	ClassFile		* classfile;
+	u2			modifiers;
 	struct class_data	* classloader_reference;
 	cp_info			* runtime_constant_pool;
 	FIELD_DATA		* field_data;
@@ -193,11 +194,12 @@ void	classLinking(CLASS_DATA *, JVM *);
 void	classLinkingVerification(CLASS_DATA *, JVM *);
 void	classLinkingPreparation(CLASS_DATA *, JVM *);
 void	classLinkingResolution(ClassFile *, JVM *);
-void	classInitialization(CLASS_DATA *, JVM *);
-void	executeMethod(char *, CLASS_DATA *, JVM *);
+void	classInitialization(CLASS_DATA *, JVM *, THREAD *);
+void	executeMethod(char *, CLASS_DATA *, JVM *, THREAD *);
 void	classUnloading(CLASS_DATA *, JVM *);
 attribute_info	* getCodeAttribute(METHOD_DATA *, CLASS_DATA *);
 void	jvmExit(JVM *);
+void	PrintConstantUtf8(cp_info *, FILE *);
 
 
 
