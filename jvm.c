@@ -381,6 +381,7 @@ void	executeMethod(char * method_name, CLASS_DATA * cd, JVM * jvm, THREAD * thre
 			frame->prox = thread->jvm_stack;
 			thread->jvm_stack = frame;
 			
+			// CHAMA O INTERPRETADOR
 			interpreter(method, thread, jvm);
 		}
 		else{

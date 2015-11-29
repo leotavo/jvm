@@ -18,7 +18,7 @@
 /*==========================================*/
 //	TIPOS
 
-typedef	u1		OPCODE;
+typedef	u1	OPCODE;
 typedef char	TYPE;
 typedef	int8_t	s1;
 typedef int16_t	s2;

@@ -43,6 +43,9 @@ Initialization:
 
 Interpreter:
 - começa a executar o método main da classe principal
+- implementada lógica do interpretador e definidos os prototipos das funções das instruções da jvm.
+FALTA:
+- implementar as funções
 
 LinkingResolution
 - resolve referências simbólicas durante a execução do interpretador
@@ -61,6 +64,7 @@ Capítulo 5 - Loading, Linking e Initializing (JVM)
 Capítulo 6 - Conjunto de Instruções da JVM
 Capítulo 9 - Mnemônicos dos Opcodes da JVM
 
+http://www.cs.cornell.edu/courses/cs2112/2012sp/lectures/lec27-12sp.pdf
 http://blog.jamesdbloom.com/JVMInternals.html (arquitetura interna da JVM)
 http://blog.jamesdbloom.com/JavaCodeToByteCode_PartOne.html (relação entre código Java e Bytecodes)
 https://www.artima.com/insidejvm/ed2/index.html (Inside the Java Virtual Machine by Bill Venners)
