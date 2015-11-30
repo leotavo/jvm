@@ -3,6 +3,7 @@
 #include	"interpreter.h"
 #include	"opcode.h"
 #include	<stdlib.h>
+#include    <string.h>
 
 /*==========================================*/
 //	INTERPRETADOR
@@ -20,6 +21,7 @@ void	interpreter(METHOD_DATA	* method, THREAD * thread, JVM * jvm){
 // Não faz nada.
 void	nop_(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.nop*/
+    thread->program_counter++;
 }
 
 /*	INSTRUÇÕES QUE CARREGAM VALORES NA PILHA	*/
@@ -31,6 +33,112 @@ void	Tconst(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.lconst_l*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.fconst_f*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.dconst_d*/
+    OPERAND	* operand = (OPERAND *) malloc(sizeof(OPERAND));
+    u4 *value = (u4*) malloc(sizeof(u4));
+    float f = 0.0;
+    switch(*thread->program_counter)
+    {
+    case aconst_null:
+    case iconst_m1:
+    case iconst_0:
+    case iconst_1:
+    case iconst_2:
+    case iconst_3:
+    case iconst_4:
+    case iconst_5:
+        if(*thread->program_counter == aconst_null)
+        {
+            value = NULL;
+        }
+        if(*thread->program_counter == iconst_m1)
+        {
+            *value = -1;
+        }
+        else if(*thread->program_counter == iconst_0)
+        {
+            *value = 0;
+        }
+        else if(*thread->program_counter == iconst_1)
+        {
+            *value = 1;
+        }
+        else if(*thread->program_counter == iconst_2)
+        {
+            *value = 2;
+        }
+        else if(*thread->program_counter == iconst_3)
+        {
+            *value = 3;
+        }
+        else if(*thread->program_counter == iconst_4)
+        {
+            *value = 4;
+        }
+        else if(*thread->program_counter == iconst_5)
+        {
+            *value = 5;
+        }
+
+        operand->value = *value;
+        operand->prox = (thread->jvm_stack)->operand_stack;
+        (thread->jvm_stack)->operand_stack = operand;
+
+        thread->program_counter++;
+        break;
+    case lconst_0:
+    case lconst_1:
+        *value = 0;
+        if(*thread->program_counter == lconst_1){
+            *value = 1;
+        }
+        operand->value = 0;
+        operand->prox = (thread->jvm_stack)->operand_stack;
+        (thread->jvm_stack)->operand_stack = operand;
+
+        operand->value = *value;
+        operand->prox = (thread->jvm_stack)->operand_stack;
+        (thread->jvm_stack)->operand_stack = operand;
+
+        thread->program_counter++;
+        break;
+    case fconst_0:
+    case fconst_1:
+    case fconst_2:
+        if(*thread->program_counter == fconst_1){
+            f = 1.0;
+        }else if(*thread->program_counter == fconst_2){
+            f = 2.0;
+        }
+        memcpy(value, &f, sizeof(u4));
+
+        operand->value = *value;
+        operand->prox = (thread->jvm_stack)->operand_stack;
+        (thread->jvm_stack)->operand_stack = operand;
+
+        thread->program_counter++;
+        break;
+    case dconst_0:
+    case dconst_1:
+        *value = 0x00000000;
+        if(*thread->program_counter == dconst_1){
+            *value = 0x3FF00000;
+        }
+
+        operand->value = *value;
+        operand->prox = (thread->jvm_stack)->operand_stack;
+        (thread->jvm_stack)->operand_stack = operand;
+
+        *value = 0x00000000;
+
+        operand->value = *value;
+        operand->prox = (thread->jvm_stack)->operand_stack;
+        (thread->jvm_stack)->operand_stack = operand;
+
+        thread->program_counter++;
+        break;
+    }
+    free(operand);
+    free(value);
 }
 
 // Tipush	0x10 e 0x11
@@ -38,6 +146,48 @@ void	Tconst(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 void	Tipush(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.bipush*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.sipush*/
+
+    OPERAND	* operand = (OPERAND *) malloc(sizeof(OPERAND));
+    u4 *value = (u4*) malloc(sizeof(u4));
+    u1 high;
+    u1 low;
+    s1 aux1;
+    s2 aux2;
+    switch(*thread->program_counter)
+    {
+    case bipush:
+        thread->program_counter++;
+        aux1 = (s1) *(thread->program_counter);
+        *value = (u4) aux1;
+        operand->value = *value;
+        operand->prox = (thread->jvm_stack)->operand_stack;
+        (thread->jvm_stack)->operand_stack = operand;
+
+        thread->program_counter++;
+
+        break;
+    case sipush:
+        thread->program_counter++;
+        high = *(thread->program_counter);
+        thread->program_counter++;
+        low = *(thread->program_counter);
+
+        aux2 = high;
+        aux2 <<= 8;
+        aux2 |= low;
+
+        *value = (u4) aux2;
+        operand->value = *value;
+        operand->prox = (thread->jvm_stack)->operand_stack;
+        (thread->jvm_stack)->operand_stack = operand;
+
+        thread->program_counter++;
+
+        break;
+    }
+    free(operand);
+    free(value);
+
 }
 
 // ldc_		0x12 a 0x14
@@ -47,6 +197,75 @@ void	ldc_(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.ldc*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.ldc_w*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.ldc2_w*/
+
+OPERAND	* operand = (OPERAND *) malloc(sizeof(OPERAND));
+    u4 *value = (u4*) malloc(sizeof(u4));
+    u1 high, low;
+	u2 string_index, index;
+	cp_info	* cp, * cp_aux;
+	char * string;
+	float f;
+    switch(*thread->program_counter)
+    {
+    case ldc:
+    case ldc_w:
+    case ldc2_w:
+        if(*thread->program_counter == ldc){
+            thread->program_counter++;
+            index = (u1) *(thread->program_counter);
+        }else if(*thread->program_counter == ldc_w || *thread->program_counter == ldc2_w){
+            thread->program_counter++;
+            high = *(thread->program_counter);
+            thread->program_counter++;
+            low = *(thread->program_counter);
+
+            index = high;
+            index <<= 8;
+            index |= low;
+        }
+        cp = (thread->jvm_stack)->current_class_constant_pool + index - 1;
+        switch(cp->tag)
+        {
+            case (CONSTANT_Integer):
+            case (CONSTANT_Float):
+                *value = cp->u.Integer_Float.bytes;
+				operand->value = *value;
+                operand->prox = (thread->jvm_stack)->operand_stack;
+                (thread->jvm_stack)->operand_stack = operand;
+                break;
+            case (CONSTANT_String):
+                cp_aux = (thread->jvm_stack)->current_class_constant_pool + cp->u.String.string_index - 1;
+                string = (char *) cp_aux->u.Utf8.bytes;
+                string[cp_aux->u.Utf8.length] = '\0';
+                *value = (u4) string;
+                operand->value = *value;
+                operand->prox = (thread->jvm_stack)->operand_stack;
+                (thread->jvm_stack)->operand_stack = operand;
+                break;
+            case (CONSTANT_Long):
+            case (CONSTANT_Double):
+                *value = cp->u.Long_Double.high_bytes;
+				operand->value = *value;
+                operand->prox = (thread->jvm_stack)->operand_stack;
+                (thread->jvm_stack)->operand_stack = operand;
+
+                *value = cp->u.Long_Double.low_bytes;
+				operand->value = *value;
+                operand->prox = (thread->jvm_stack)->operand_stack;
+                (thread->jvm_stack)->operand_stack = operand;
+
+                break;
+            default:
+                printf("Indice invalido.\n");
+                exit(1);
+                break;
+        }
+        thread->program_counter++;
+        break;
+    }
+    free(operand);
+    free(value);
+
 }
 
 // Tload	0x15 a 0x2D
@@ -431,147 +650,147 @@ void	impdep(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 INSTRUCTION	func[] = {
 		// 0x00		nop
 		nop_,
-		
+
 		// 0x01 a 0x0F	Tconst
 		Tconst, Tconst, Tconst, Tconst, Tconst, Tconst, Tconst,Tconst,
 		Tconst,	Tconst, Tconst, Tconst, Tconst, Tconst, Tconst,
-		
+
 		// 0x10 e 0x11	Tipush
 		Tipush, Tipush,
-		
+
 		// 0x12 a 0x14	ldc_
 		ldc_, ldc_, ldc_,
-		
+
 		// 0x15 a 0x2D	Tload
 		Tload, Tload, Tload, Tload, Tload, Tload, Tload, Tload, Tload, Tload,
 		Tload, Tload, Tload, Tload, Tload, Tload, Tload, Tload, Tload, Tload,
 		Tload, Tload, Tload, Tload, Tload,
-		
+
 		// 0x2E a 0x35	Taload
 		Taload, Taload, Taload, Taload, Taload, Taload, Taload, Taload,
-		
+
 		// 0x36 a 0x4E	Tstore
 		Tstore, Tstore, Tstore, Tstore, Tstore, Tstore,	Tstore, Tstore, Tstore, Tstore,
 		Tstore, Tstore, Tstore, Tstore, Tstore, Tstore,	Tstore, Tstore, Tstore, Tstore,
-		Tstore, Tstore, Tstore, Tstore, Tstore, 
-		
+		Tstore, Tstore, Tstore, Tstore, Tstore,
+
 		// 0x4F a 0x56
 		Tastore, Tastore, Tastore, Tastore, Tastore, Tastore, Tastore, Tastore,
-		
+
 		// 0x57 a 0x5F
 		 handleStack, handleStack, handleStack, handleStack, handleStack, handleStack, handleStack, handleStack, handleStack,
-		
+
 		// 0x60 a 0x63
 		Tadd, Tadd, Tadd, Tadd,
-		
+
 		// 0x64 a 0x67
 		Tsub, Tsub, Tsub, Tsub,
-		
+
 		// 0x68 a 0x6N
 		Tmul, Tmul, Tmul, Tmul,
-		
+
 		// 0x6C a 0x6F
 		Tdiv, Tdiv, Tdiv, Tdiv,
-		
+
 		// 0x70 a 0x73
 		Trem, Trem, Trem, Trem,
-		
+
 		// 0x74 a 0x77
 		Tneg, Tneg, Tneg, Tneg,
-		
+
 		// 0x78 e 0x79
 		Tshl, Tshl,
-		
+
 		// 0x7A e 0x7B
 		Tshr, Tshr,
-		
+
 		// 0x7C e 0x7D
 		Tushr, Tushr,
-		
+
 		// 0x7E e 0x7F
 		Tand, Tand,
-		
+
 		// 0x80 e 0x81
 		Tor, Tor,
-		
+
 		// 0x82 e 0x83
 		Txor, Txor,
-		
+
 		// 0x84
 		Tinc,
-		
+
 		// 0x85 a 0x87
 		i2T, i2T, i2T,
-		
+
 		// 0x88 a 0x8A
 		l2T, l2T, l2T,
-		
+
 		// 0x8B a 0x8D
 		f2T, f2T, f2T,
-		
+
 		// 0x8E a 0x90
 		d2T, d2T, d2T,
-		
+
 		// 0x91 a 0x93
 		i2T, i2T, i2T,
-		
+
 		// 0x94
 		Tcmp,
-		
+
 		// 0x95 a 0x98
 		TcmpOP, TcmpOP, TcmpOP, TcmpOP,
-		
+
 		// 0x99 a 0x9E
 		ifOP, ifOP, ifOP, ifOP, ifOP, ifOP,
-		
+
 		// 0x9F a 0xA4
 		if_icmOP, if_icmOP, if_icmOP, if_icmOP, if_icmOP, if_icmOP,
-		
+
 		// 0xA5 e 0xA6
 		if_acmOP, if_acmOP,
-		
+
 		// 0xA7, 0xA8, 0xA9
 		jump, jump, jump,
-		
+
 		// 0xAA e 0xAB
 		switch_, switch_,
-		
+
 		// 0xAC a 0xB1
 		Treturn, Treturn, Treturn, Treturn, Treturn, Treturn,
-		
+
 		// 0xB2 a 0xB5
 		accessField, accessField, accessField, accessField,
-		
+
 		// 0xB6 a 0xBA
 		invoke, invoke, invoke, invoke, invoke,
-		
+
 		// 0xBB a 0xBE
 		handleObject, handleObject, handleObject, handleObject,
-		
+
 		// 0xBF
 		athrow_,
-		
+
 		// 0xC0 e 0xC1
-		properties, properties,		
-		
+		properties, properties,
+
 		// 0xC2 e 0xC3
 		monitor, monitor,
- 
+
 		// 0xC4
 		wide_,
-		
+
 		// 0xC5
 		handleObject,
-		
+
 		// 0xC6 e 0xC7
 		ifNull, ifNull,
-		
+
 		// 0xC8 a 0xC9
 		widejump, widejump,
 
 		// 0xCA
 		breakpoint_,
-		
+
 		// 0xCB a 0xFD
 		nonDefined, nonDefined, nonDefined, nonDefined, nonDefined,
 		nonDefined, nonDefined, nonDefined, nonDefined, nonDefined,
@@ -583,8 +802,8 @@ INSTRUCTION	func[] = {
 		nonDefined, nonDefined,	nonDefined, nonDefined, nonDefined,
 		nonDefined, nonDefined, nonDefined, nonDefined, nonDefined,
 		nonDefined, nonDefined,	nonDefined, nonDefined, nonDefined,
-		nonDefined, 
-		
+		nonDefined,
+
 		// 0xFE e 0xFF
 		impdep, impdep
 };
