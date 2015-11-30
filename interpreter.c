@@ -1,14 +1,25 @@
 // interpreter.c
 
 #include	"interpreter.h"
+#include	"classreader.h"
 #include	"opcode.h"
 #include	<stdlib.h>
+
+//Chapter 7. Opcode Mnemonics by Opcode
+//https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-7.html
+
+// 2.11. Instruction Set Summary
+// https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-2.html#jvms-2.11
+
+//6.5. Instructions => AKI TEM UMA EXPLICAÇÃO DETALHADA DE CADA INSTRUÇÃO
+//https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5
 
 /*==========================================*/
 //	INTERPRETADOR
 void	interpreter(METHOD_DATA	* method, THREAD * thread, JVM * jvm){
 	thread->program_counter = method->bytecodes;
-	while(thread->program_counter){	// enquanto houver instruções
+	while(thread->program_counter < (method->bytecodes + method->code_length)){	// enquanto houver instruções
+		printf("instrução %s\n", opcodes[* thread->program_counter]);
 		func[* thread->program_counter](method, thread, jvm);
 		// OBS: PROGRAM_COUNTER DEVE SER MODIFICADO AO EXECUTAR CADA INSTRUÇÃO, DE ACORDO COM A QUANTIDADE DE OPERANDOS.
 	}
@@ -62,6 +73,12 @@ void	Tload(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.fload_n*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.dload_n*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.aload_n*/
+	switch(* thread->program_counter){// PARA TESTAR O HELLOWORLD
+		case	aload_0:
+			thread->program_counter++;
+			break;
+	}
+
 }
 
 // Taload	0x2E a 0x35
@@ -75,6 +92,7 @@ void	Taload(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.baload*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.caload*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.saload*/
+	
 }
 
 /*	INSTRUÇÕES QUE ARMAZENAM VALORES NO VETOR DE VARIAVEIS LOCAIS	*/
@@ -336,6 +354,11 @@ void	Treturn(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.dreturn*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.areturn*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.return*/
+	switch(* thread->program_counter){// PARA TESTAR O HELLOWORLD
+		case	return_:
+			(thread->program_counter)++;
+			break;
+	}
 }
 
 // accessField	0xB2 a 0xB5
@@ -345,7 +368,59 @@ void	accessField(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.putstatic*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.getfield*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.putfield*/
-	puts("accessField");
+
+/*	puts("accessField");*/
+	if((method->bytecodes + method->code_length - 2) <= thread->program_counter){
+		puts("VerifyError: instrução sem a quantidade de argumentos correta.");
+		exit(EXIT_FAILURE);
+	}
+	
+	u1	indexbyte1 = *(thread->program_counter + 1);
+	u1	indexbyte2 = *(thread->program_counter + 2);
+	u2	index = (indexbyte1 << 8) | indexbyte2;
+	
+	// RESOLUÇÃO DO FIELD
+	cp_info	* cp_aux = (thread->jvm_stack)->current_constant_pool;
+	cp_aux = cp_aux + index - 1; // falta verificar se o indice está nos limites da constant pool
+	cp_info	* cp_class_name = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Ref.class_index - 1;
+	printf("field class name: ");
+	PrintConstantUtf8(cp_class_name, stdout);
+	cp_aux = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Ref.name_and_type_index - 1;
+	cp_info * cp_field_name = (thread->jvm_stack)->current_constant_pool + cp_aux->u.NameAndType.name_index - 1;
+	
+	CLASS_DATA	* field_class = getClass(cp_class_name, jvm);
+	puts("Controle de acesso");
+	// CONTROLE DE ACESSO
+	if(!field_class){// se a classe do field não foi carregada
+		char	* class_name = cp_class_name->u.Utf8.bytes;
+		class_name[cp_class_name->u.Utf8.length] = '\0';
+		classLoading(class_name, &field_class, method->class_data, jvm);
+		classLinking(field_class, jvm);
+		classInitialization(field_class, jvm, thread);
+	}
+	else{
+		if(field_class != method->class_data){// Se o Field não for da mesma classe
+			// verifica se a classe do field é acessível pelo método corrente	
+			if(!(field_class->modifiers & ACC_PUBLIC) &
+			(field_class->classloader_reference != (method->class_data)->classloader_reference)){
+				puts("IllegalAccessError: acesso indevido à classe ou interface.");
+				exit(EXIT_FAILURE);
+			}
+		}
+	}	
+	switch(* thread->program_counter){
+		case	getstatic:
+				getClassVariable(cp_field_name, field_class);
+			break;
+		case	putstatic:
+			break;
+		case	getfield:
+			break;
+		case	putfield:
+			break;	
+	}
+	
+	thread->program_counter += 3;
 }
 
 // invoke	0xB6 a 0xBA
@@ -356,6 +431,11 @@ void	invoke(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.invokestatic*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.invokeinterface*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.invokedynamic*/
+	switch(* thread->program_counter){// PARA TESTAR O HELLOWORLD
+		case	invokespecial:
+			thread->program_counter += 3;
+			break;
+	}
 }
 
 // handleObject	0xBB a 0xBE; 0xC5

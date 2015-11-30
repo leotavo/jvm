@@ -575,31 +575,7 @@ void	verifyClassfile(ClassFile * cf){
 } // fim da funcao verifyClassfile
 
 
-/*==========================================*/
-// função getSuperClass
-CLASS_DATA	* getSuperClass(ClassFile * cf, JVM * jvm){
-	if(cf->super_class){
-		cp_info	* cp_aux = cf->constant_pool + cf->super_class - 1;
-		cp_aux = cf->constant_pool + cp_aux->u.Class.name_index - 1;
-		char	* super_name = cp_aux->u.Utf8.bytes;
-		super_name[cp_aux->u.Utf8.length] = '\0';
-		if(strcmp(super_name, "java/lang/Object")){
-			CLASS_DATA	* cd = jvm->method_area;
-/*			printf("length = %" PRIu16 "\n", (cd->class_name)->u.Utf8.length);*/
-			while(cd){
-				char	* name = (cd->class_name)->u.Utf8.bytes;
-				name[(cd->class_name)->u.Utf8.length] = '\0';
-				if(!strcmp(super_name, name)){
-					return	cd;
-				}
-				else{
-					cd = cd->prox;
-				}	
-			}
-		}
-	}
-	return	NULL;
-}// fim da função getSuperClass
+
 
 /*==========================================*/
 // função verifyFinal
