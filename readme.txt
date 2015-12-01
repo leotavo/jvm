@@ -1,17 +1,8 @@
-Compilação:
-$ gcc -std=c99 *.c -o jvm
+RECADOS: 
 
-Execução:
-Linux
-$ ./jvm arquivo.class [args...]
-Windows
-$ jvm.exe arquivo.class [args...]
-args = array de strings, argumento do método main da classe de entrada. (opcional)
 
-Testes Prontos:
-Linux
-$ ./teste.sh
-
+MASTER ATUALIZADA. FAÇAM CLONE DELA ANTES DE FAZER CÒDIGO NOVO (01/12)
+ESCREVAM NO README QUAL FUNCAO VCS ESTAO MEXENDO!!!
 
 SITUAÇÃO ATUAL:
 
@@ -42,7 +33,7 @@ if_acmOP
 jump
 switch_
 Treturn
-accessField
+accessField => LEO
 invoke
 handleObject
 athrow_
@@ -74,7 +65,19 @@ LinkingResolution
 - resolve referências simbólicas durante a execução do interpretador
 
 
+Compilação:
+$ gcc -std=c99 *.c -o jvm
 
+Execução:
+Linux
+$ ./jvm arquivo.class [args...]
+Windows
+$ jvm.exe arquivo.class [args...]
+args = array de strings, argumento do método main da classe de entrada. (opcional)
+
+Testes Prontos:
+Linux
+$ ./teste.sh
 
 
 Links úteis (Quem tiver algum link útil, coloque aqui):
