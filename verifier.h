@@ -15,7 +15,6 @@ void	verifyConstantPool(ClassFile *);
 void	verifyAccessFlags(ClassFile *);
 void	verifyBytecode(attribute_info *, ClassFile *);
 void	verifyClassfile(ClassFile *);
-CLASS_DATA	* getSuperClass(ClassFile *, JVM *);
 void	verifySuperFinal(ClassFile *, JVM *);
 void	verifyOverrideMethodFinal(ClassFile *, JVM *);
 #endif

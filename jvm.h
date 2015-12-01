@@ -95,14 +95,22 @@ typedef	struct value{
 	}u;
 }VALUE;
 
+typedef	struct operand{
+	u4	value;
+	TYPE	type;
+	struct operand 	* prox;
+}OPERAND;
+
 // FRAME
 typedef	struct frame{
 	u4		* local_variables;
-	u4		* operand_stack;
-	cp_info		* current_class_constant_pool;
+	OPERAND		* operand_stack;
+	cp_info		* current_constant_pool;
 	VALUE		* return_value;
 	struct frame	* prox;
 }FRAME;
+
+
 
 // THREAD
 typedef	struct thread{
@@ -142,6 +150,7 @@ typedef	struct	method_data{
 	cp_info	* method_name; // CONSTANT_Utf8
 	cp_info	* method_descriptor; // CONSTANT_Utf8
 	u2	modifiers;	// access_flags	
+	struct class_data	* class_data;
 	
 	// se o método não é abstrato.
 	u4	code_length;
@@ -198,8 +207,12 @@ void	classInitialization(CLASS_DATA *, JVM *, THREAD *);
 void	executeMethod(char *, CLASS_DATA *, JVM *, THREAD *);
 void	classUnloading(CLASS_DATA *, JVM *);
 attribute_info	* getCodeAttribute(METHOD_DATA *, CLASS_DATA *);
+char	*	getClassName(CLASS_DATA *);
+CLASS_DATA	* getSuperClass(ClassFile *, JVM *);
+CLASS_DATA	* getClass(cp_info *, JVM *);
 void	jvmExit(JVM *);
 void	PrintConstantUtf8(cp_info *, FILE *);
+VARIABLE	* getClassVariable(cp_info *, CLASS_DATA *);
 
 
 
