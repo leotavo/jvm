@@ -569,6 +569,145 @@ void	Tadd(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.ladd*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.fadd*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.dadd*/
+	int32_t first_operand, second_operand;
+	int64_t oper1, oper2, *aux3d;
+	float *aux1f, *aux2f;
+	double *aux1d, *aux2d;
+	u4 value, aux1, aux2, *aux3f, aux4d, aux5d;
+	OPERAND	* operand = (OPERAND *) malloc(sizeof(OPERAND));
+
+	switch(*thread->program_counter) {
+		// INSTRUÇÃO IADD
+		case iadd:
+			// Desempilha operando
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			first_operand = (int32_t) value;
+			// Desempilha operando
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			second_operand = (int32_t) value;
+			// Empilha soma
+			operand = (OPERAND *) malloc(sizeof(OPERAND));
+			operand->value = first_operand + second_operand;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+			thread->program_counter++;
+			break;
+		case ladd:
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			aux2 = (int32_t) value;
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			oper1 = (signed)(int32_t) value;
+
+			oper1 = oper1 << 32;
+			oper1 |= aux2;
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			aux2 = (signed)(int32_t) value;
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			oper2 = (signed)(int32_t) value;
+
+			oper2 = oper2 << 32;
+			oper2 |= aux2;
+			oper1 = oper2 + oper1;
+			aux1 = oper1 >> 32;
+
+			operand = (OPERAND *) malloc(sizeof(OPERAND));
+			operand->value = aux1;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+
+			aux1 = oper1 & 0xffffffff;
+
+			operand = (OPERAND *) malloc(sizeof(OPERAND));
+			operand->value = aux1;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+			thread->program_counter++;
+			break;
+		case fadd:
+
+			aux3f = malloc(sizeof(u4));
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			*aux3f = (int32_t) value;
+
+			aux1f = malloc(sizeof(float));
+			memcpy(aux1f, aux3f, sizeof(u4));
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			*aux3f = (int32_t) value;
+
+			aux2f = malloc(sizeof(float));
+			memcpy(aux2f, aux3f, sizeof(u4));
+
+			*aux1f = *aux1f + *aux2f;
+			memcpy(aux3f, aux1f, sizeof(u4));
+
+			operand = (OPERAND *) malloc(sizeof(OPERAND));
+			operand->value = *aux3f;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+			thread->program_counter++;
+			break;
+		case dadd:
+
+			aux3d = malloc(sizeof(int64_t));
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			aux5d = (int32_t) value;
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			*aux3d = (int32_t) value;
+
+			*aux3d = *aux3d << 32;
+			*aux3d |= aux5d;
+
+			aux1d = malloc(sizeof(double));
+			memcpy(aux1d, aux3d, sizeof(double));
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			aux5d = (int32_t) value;
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			*aux3d = (int32_t) value;
+
+			*aux3d = *aux3d << 32;
+			*aux3d |= aux5d;
+
+			aux2d = malloc(sizeof(double));
+			memcpy(aux2d, aux3d, sizeof(double));
+			*aux1d = *aux1d + *aux2d;
+			memcpy(aux3d, aux1d, sizeof(double));
+			aux4d = *aux3d >> 32;
+
+			operand = (OPERAND *) malloc(sizeof(OPERAND));
+			operand->value = aux4d;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+
+			aux4d = *aux3d & 0xffffffff;
+			operand = (OPERAND *) malloc(sizeof(OPERAND));
+			operand->value = aux4d;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+			thread->program_counter++;
+			break;
+	}
 }
 
 // Tsub		0x64 a 0x67
@@ -578,6 +717,146 @@ void	Tsub(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.lsub*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.fsub*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.dsub*/
+	int32_t first_operand, second_operand;
+	int64_t oper1, oper2, *aux3d;
+	float *aux1f, *aux2f;
+	double *aux1d, *aux2d;
+	u4 value, aux1, aux2, *aux3f, aux4d, aux5d;
+	OPERAND	* operand = (OPERAND *) malloc(sizeof(OPERAND));
+
+	switch(*thread->program_counter) {
+		// INSTRUÇÃO IADD
+		case isub:
+			// Desempilha operando
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			first_operand = (int32_t) value;
+			// Desempilha operando
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			second_operand = (int32_t) value;
+			// Empilha soma
+			operand = (OPERAND *) malloc(sizeof(OPERAND));
+			operand->value = second_operand - first_operand;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+			thread->program_counter++;
+			break;
+		case lsub:
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			aux2 = (int32_t) value;
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			oper1 = (signed)(int32_t) value;
+
+			oper1 = oper1 << 32;
+			oper1 |= aux2;
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			aux2 = (int32_t) value;
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			oper2 = (signed)(int32_t) value;
+
+			oper2 = oper2 << 32;
+			oper2 |= aux2;
+			oper1 = oper2 - oper1;
+			aux1 = oper1 >> 32;
+
+			operand = (OPERAND *) malloc(sizeof(OPERAND));
+			operand->value = aux1;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+
+			aux1 = oper1 & 0xffffffff;
+
+			operand = (OPERAND *) malloc(sizeof(OPERAND));
+			operand->value = aux1;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+			thread->program_counter++;
+			break;
+		case fadd:
+
+			aux3f = malloc(sizeof(u4));
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			*aux3f = (int32_t) value;
+
+			aux1f = malloc(sizeof(float));
+			memcpy(aux1f, aux3f, sizeof(u4));
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			*aux3f = (int32_t) value;
+
+			aux2f = malloc(sizeof(float));
+			memcpy(aux2f, aux3f, sizeof(u4));
+
+			*aux1f = *aux2f - *aux1f;
+			memcpy(aux3f, aux1f, sizeof(u4));
+
+			operand = (OPERAND *) malloc(sizeof(OPERAND));
+			operand->value = *aux3f;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+			thread->program_counter++;
+			break;
+		case dadd:
+
+			aux3d = malloc(sizeof(int64_t));
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			aux5d = (int32_t) value;
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			*aux3d = (int32_t) value;
+
+			*aux3d = *aux3d << 32;
+			*aux3d |= aux5d;
+
+			aux1d = malloc(sizeof(double));
+			memcpy(aux1d, aux3d, sizeof(double));
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			aux5d = (int32_t) value;
+
+			value = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			*aux3d = (int32_t) value;
+
+			*aux3d = *aux3d << 32;
+			*aux3d |= aux5d;
+
+			aux2d = malloc(sizeof(double));
+			memcpy(aux2d, aux3d, sizeof(double));
+			*aux1d = *aux2d - *aux1d;
+			memcpy(aux3d, aux1d, sizeof(double));
+			aux4d = *aux3d >> 32;
+
+			operand = (OPERAND *) malloc(sizeof(OPERAND));
+			operand->value = aux4d;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+
+			aux4d = *aux3d & 0xffffffff;
+			operand = (OPERAND *) malloc(sizeof(OPERAND));
+			operand->value = aux4d;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+			thread->program_counter++;
+			break;
+	}
+
 }
 
 // Tmul		0x68 a 0x6B
