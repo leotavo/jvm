@@ -97,6 +97,7 @@ typedef	struct value{
 
 typedef	struct operand{
 	u4	value;
+	TYPE	type;
 	struct operand 	* prox;
 }OPERAND;
 

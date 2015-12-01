@@ -4,6 +4,21 @@
 #include	"classreader.h"
 #include	"opcode.h"
 #include	<stdlib.h>
+#include	<string.h>
+
+
+/*	ARQUIVOS DE TESTE
+nop_
+	nao definido
+Tconst e Tstore
+	Exemplos/Tconst_Tstore.class
+Tipush
+	Exemplos/Tipush.class
+ldc_
+	Exemplos/ldc_class
+*/
+
+int	isWide = 0;
 
 //Chapter 7. Opcode Mnemonics by Opcode
 //https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-7.html
@@ -31,17 +46,116 @@ void	interpreter(METHOD_DATA	* method, THREAD * thread, JVM * jvm){
 // Não faz nada.
 void	nop_(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.nop*/
+	thread->program_counter++;
 }
 
 /*	INSTRUÇÕES QUE CARREGAM VALORES NA PILHA	*/
 // Tconst	0x01 a 0x0F
 //	Carregam constantes na pilha de operandos.
 void	Tconst(METHOD_DATA * method, THREAD * thread, JVM * jvm){
-/*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.aconst_null*/
-/*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.iconst_i*/
-/*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.lconst_l*/
-/*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.fconst_f*/
-/*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.dconst_d*/
+/*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.aconst_null*/	// Tconst_Tstore.class
+/*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.iconst_i*/	// Tconst_Tstore.class
+/*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.lconst_l*/	// Tconst_Tstore.class
+/*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.fconst_f*/	// Tconst_Tstore.class
+/*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.dconst_d*/	// Tconst_Tstore.class
+	OPERAND		* operand = (OPERAND *) malloc(sizeof(OPERAND));
+	u4		* value = (u4*) malloc(sizeof(u4));
+	float		f = 0.0;
+	switch(*thread->program_counter){
+		case aconst_null:
+		case iconst_m1:
+		case iconst_0:
+		case iconst_1:
+		case iconst_2:
+		case iconst_3:
+		case iconst_4:
+		case iconst_5:
+			if(*thread->program_counter == aconst_null){
+				value = NULL;
+			}
+			else if(*thread->program_counter == iconst_m1){
+				*value = -1;
+			}
+			else if(*thread->program_counter == iconst_0){
+				*value = 0;
+			}
+			else if(*thread->program_counter == iconst_1){
+				*value = 1;
+			}
+			else if(*thread->program_counter == iconst_2){
+				*value = 2;
+			}
+			else if(*thread->program_counter == iconst_3){
+				*value = 3;
+			}
+			else if(*thread->program_counter == iconst_4){
+				*value = 4;
+			}
+			else if(*thread->program_counter == iconst_5){
+				*value = 5;
+			}
+			
+			if(!value){
+				operand->value = (u4) value;
+			}
+			else{
+				operand->value = *value;
+			}
+
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+			
+			break;
+		case lconst_0:
+		case lconst_1:
+				*value = 0;
+			if(*thread->program_counter == lconst_1){
+				*value = 1;
+			}
+			operand->value = 0;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+
+			operand->value = *value;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+			break;
+		case fconst_0:
+		case fconst_1:
+		case fconst_2:
+			if(*thread->program_counter == fconst_1){
+				f = 1.0;
+			}
+			else if(*thread->program_counter == fconst_2){
+				f = 2.0;
+			}
+			memcpy(value, &f, sizeof(u4));
+
+			operand->value = *value;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+			break;
+		case dconst_0:
+		case dconst_1:
+			*value = 0x00000000;
+			if(*thread->program_counter == dconst_1){
+				*value = 0x3FF00000;
+			}
+
+			operand->value = *value;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+
+			*value = 0x00000000;
+
+			operand->value = *value;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+			break;
+	}
+	thread->program_counter++;
+/*	free(operand);*/
+	free(value);
 }
 
 // Tipush	0x10 e 0x11
@@ -49,6 +163,40 @@ void	Tconst(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 void	Tipush(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.bipush*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.sipush*/
+	OPERAND	* operand = (OPERAND *) malloc(sizeof(OPERAND));
+	u4 *value = (u4*) malloc(sizeof(u4));
+	u1 high;
+	u1 low;
+	s1 aux1;
+	s2 aux2;
+	switch(*thread->program_counter){
+		case bipush:
+			thread->program_counter++;
+			aux1 = (s1) *(thread->program_counter);
+			*value = (u4) aux1;
+			operand->value = *value;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+			thread->program_counter++;
+			break;
+		case sipush:
+			thread->program_counter++;
+			high = *(thread->program_counter);
+			thread->program_counter++;
+			low = *(thread->program_counter);
+			aux2 = high;
+			aux2 <<= 8;
+			aux2 |= low;
+			*value = (u4) aux2;
+			operand->value = *value;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+
+			thread->program_counter++;
+			break;
+	}
+/*	free(operand);*/
+	free(value);
 }
 
 // ldc_		0x12 a 0x14
@@ -58,6 +206,73 @@ void	ldc_(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.ldc*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.ldc_w*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.ldc2_w*/
+	OPERAND	* operand = (OPERAND *) malloc(sizeof(OPERAND));
+	u4 *value = (u4*) malloc(sizeof(u4));
+	u1 high, low;
+	u2 string_index, index;
+	cp_info	* cp, * cp_aux;
+	char * string;
+	float f;
+	switch(*thread->program_counter)
+	{
+	case ldc:
+	case ldc_w:
+	case ldc2_w:
+		if(*thread->program_counter == ldc){
+			thread->program_counter++;
+			index = (u1) *(thread->program_counter);
+		}else if(*thread->program_counter == ldc_w || *thread->program_counter == ldc2_w){
+			thread->program_counter++;
+			high = *(thread->program_counter);
+			thread->program_counter++;
+			low = *(thread->program_counter);
+
+			index = high;
+			index <<= 8;
+			index |= low;
+		}
+		cp = (thread->jvm_stack)->current_constant_pool + index - 1;
+		switch(cp->tag)
+		{
+			case (CONSTANT_Integer):
+			case (CONSTANT_Float):
+				*value = cp->u.Integer_Float.bytes;
+				operand->value = *value;
+				operand->prox = (thread->jvm_stack)->operand_stack;
+				(thread->jvm_stack)->operand_stack = operand;
+				break;
+			case (CONSTANT_String):
+				cp_aux = (thread->jvm_stack)->current_constant_pool + cp->u.String.string_index - 1;
+				string = (char *) cp_aux->u.Utf8.bytes;
+				string[cp_aux->u.Utf8.length] = '\0';
+				*value = (u4) string;
+				operand->value = *value;
+				operand->prox = (thread->jvm_stack)->operand_stack;
+				(thread->jvm_stack)->operand_stack = operand;
+				break;
+			case (CONSTANT_Long):
+			case (CONSTANT_Double):
+				*value = cp->u.Long_Double.high_bytes;
+				operand->value = *value;
+				operand->prox = (thread->jvm_stack)->operand_stack;
+				(thread->jvm_stack)->operand_stack = operand;
+
+				*value = cp->u.Long_Double.low_bytes;
+				operand->value = *value;
+				operand->prox = (thread->jvm_stack)->operand_stack;
+				(thread->jvm_stack)->operand_stack = operand;
+
+				break;
+			default:
+				printf("Indice invalido.\n");
+				exit(1);
+				break;
+		}
+		thread->program_counter++;
+		break;
+	}
+/*	free(operand);*/
+	free(value);
 }
 
 // Tload	0x15 a 0x2D
@@ -73,12 +288,120 @@ void	Tload(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.fload_n*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.dload_n*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.aload_n*/
-	switch(* thread->program_counter){// PARA TESTAR O HELLOWORLD
-		case	aload_0:
+	OPERAND	* operand = (OPERAND *) malloc(sizeof(OPERAND));
+	thread->program_counter++;
+	u2 index;
+	index = (u1) *(thread->program_counter);
+	u4 *value = (u4*) malloc(sizeof(u4));
+	switch(*thread->program_counter){
+	case iload:
+	case lload:
+	case fload:
+	case dload:
+	case aload:
+		if (isWide){
+			index = index << 8;
+			thread->program_counter++;
+			index = index | *(thread->program_counter);
+			isWide = 0;
+		}
+		*value = (thread->jvm_stack)->local_variables[index];
+
+		operand->value = *value;
+		operand->prox = (thread->jvm_stack)->operand_stack;
+		(thread->jvm_stack)->operand_stack = operand;
+
+		if(*thread->program_counter == lload || *thread->program_counter == dload){
+			*value = (thread->jvm_stack)->local_variables[index + 1];
+
+			operand->value = *value;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+		}
+
+		thread->program_counter++;
+		break;
+		case iload_0:
+		case iload_1:
+		case iload_2:
+		case iload_3:
+		case fload_0:
+		case fload_1:
+		case fload_2:
+		case fload_3:
+		case aload_0:
+		case aload_1:
+		case aload_2:
+		case aload_3:
+			if(*thread->program_counter == iload_0 || 
+			*thread->program_counter == fload_0 || 
+			*thread->program_counter == aload_0){
+				index = 0;
+			}
+			else if(*thread->program_counter == iload_1 ||
+			*thread->program_counter == fload_1 ||
+			*thread->program_counter == aload_1){
+				index = 1;
+			}
+			else if(*thread->program_counter == iload_2 ||
+			*thread->program_counter == fload_2 ||
+			*thread->program_counter == aload_2){
+				index = 2;
+			}
+			else if(*thread->program_counter == iload_3 ||
+			*thread->program_counter == fload_3 ||
+			*thread->program_counter == aload_3){
+				index = 3;
+			}
+			*value = (thread->jvm_stack)->local_variables[index];
+
+			operand->value = *value;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+
+			thread->program_counter++;
+			break;
+		case lload_0:
+		case lload_1:
+		case lload_2:
+		case lload_3:
+		case dload_0:
+		case dload_1:
+		case dload_2:
+		case dload_3:
+			if(*thread->program_counter == lload_0 ||
+			 *thread->program_counter == dload_0){
+				index = 0;
+			}
+			else if(*thread->program_counter == lload_1 ||
+			 *thread->program_counter == dload_1){
+				index = 1;
+			}
+			else if(*thread->program_counter == lload_2 ||
+			 *thread->program_counter == dload_2){
+				index = 2;
+			}
+			else if(*thread->program_counter == lload_3 ||
+			 *thread->program_counter == dload_3){
+				index = 3;
+			}
+			*value = (thread->jvm_stack)->local_variables[index];
+
+			operand->value = *value;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+
+			*value = (thread->jvm_stack)->local_variables[index + 1];
+
+			operand->value = *value;
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+
 			thread->program_counter++;
 			break;
 	}
-
+/*	free(operand);*/
+	free(value);
 }
 
 // Taload	0x2E a 0x35
@@ -92,7 +415,70 @@ void	Taload(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.baload*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.caload*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.saload*/
-	
+	OPERAND	* operand = (OPERAND *) malloc(sizeof(OPERAND));
+	thread->program_counter++;
+	u2 index;
+	index = (u1) *(thread->program_counter);
+	u4 *value = (u4*) malloc(sizeof(u4));
+	void *reference;
+	u4 f;
+	switch(*thread->program_counter){
+		case iaload:
+		case faload:
+		case aaload:
+		case baload:
+		case caload:
+		case saload:
+			// get index from operand_stack
+			index = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			(thread->jvm_stack)->operand_stack = operand;
+			//get reference from operand_stack
+			reference = (void *)(thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			(thread->jvm_stack)->operand_stack = operand;
+			//push array element into the operand_stack;
+			if(*thread->program_counter == iaload || *thread->program_counter == aaload){
+				operand->value = ((u4 *)reference)[index];
+			}
+			else if(*thread->program_counter == faload){
+				memcpy(&f, &((float *)reference)[index], sizeof(u4));
+				operand->value = f;
+			}
+			else if(*thread->program_counter == caload || *thread->program_counter == saload){
+				operand->value = (u4)(((u2 *)reference)[index]);
+			}
+			else if(*thread->program_counter == baload){
+				operand->value = (u4)(((u1 *)reference)[index]);
+			}
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+
+			thread->program_counter++;
+			break;
+
+		case laload:
+		case daload:
+			// get index from operand_stack
+			index = (thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			(thread->jvm_stack)->operand_stack = operand;
+			//get reference from operand_stack
+			reference = (void *)(thread->jvm_stack)->operand_stack->value;
+			(thread->jvm_stack)->operand_stack = (thread->jvm_stack)->operand_stack->prox;
+			(thread->jvm_stack)->operand_stack = operand;
+			//push array element into the operand_stack;
+			operand->value = ((u4 *)reference)[index];
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+
+			operand->value = ((u4 *)reference)[index + 1];
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+
+			thread->program_counter++;
+			break;
+	}
 }
 
 /*	INSTRUÇÕES QUE ARMAZENAM VALORES NO VETOR DE VARIAVEIS LOCAIS	*/
@@ -110,6 +496,38 @@ void	Tstore(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.fstore_n*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.dstore_n*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.astore_n*/
+	switch(*thread->program_counter){
+		case	istore:
+		case	lstore:
+		case	fstore:
+		case	dstore:
+		case	astore:
+			thread->program_counter += 2;
+			break;
+		case	istore_0:
+		case	istore_1:
+		case	istore_2:
+		case	istore_3:
+		case	lstore_0:
+		case	lstore_1:
+		case	lstore_2:
+		case	lstore_3:
+		case	fstore_0:
+		case	fstore_1:
+		case	fstore_2:
+		case	fstore_3:
+		case	dstore_0:
+		case	dstore_1:
+		case	dstore_2:
+		case	dstore_3:
+		case	astore_0:
+		case	astore_1:
+		case	astore_2:
+		case	astore_3:
+			thread->program_counter++;
+			break;
+		
+	}
 }
 
 // Tastore	0x4F a 0x56
@@ -123,6 +541,7 @@ void	Tastore(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.bastore*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.castore*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.sastore*/
+	thread->program_counter++;
 }
 
 /*	MANIPULAÇÃO DA PILHA	*/
@@ -138,6 +557,7 @@ void	handleStack(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.dup2*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.dup2_x1*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.dup2_x2*/
+	thread->program_counter++;
 }
 
 /*	INSTRUÇÕES ARITMETICAS	*/
@@ -245,6 +665,7 @@ void	Txor(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 //	Incremento de variável local
 void	Tinc(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.iinc*/
+	thread->program_counter += 3;
 }
 
 /*	CONVERSÕES DE TIPOS	*/
@@ -321,6 +742,7 @@ void	if_icmOP(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.if_icmpge*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.if_icmpgt*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.if_icmple*/
+	thread->program_counter += 3;
 }
 
 // if_acmOP	0xA5 e 0xA6
@@ -336,6 +758,7 @@ void	jump(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.goto*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.jsr*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.ret*/
+	thread->program_counter += 3;
 }
 
 // switch_	0xAA e 0xAB
@@ -370,47 +793,47 @@ void	accessField(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.putfield*/
 
 /*	puts("accessField");*/
-	if((method->bytecodes + method->code_length - 2) <= thread->program_counter){
-		puts("VerifyError: instrução sem a quantidade de argumentos correta.");
-		exit(EXIT_FAILURE);
-	}
-	
-	u1	indexbyte1 = *(thread->program_counter + 1);
-	u1	indexbyte2 = *(thread->program_counter + 2);
-	u2	index = (indexbyte1 << 8) | indexbyte2;
-	
-	// RESOLUÇÃO DO FIELD
-	cp_info	* cp_aux = (thread->jvm_stack)->current_constant_pool;
-	cp_aux = cp_aux + index - 1; // falta verificar se o indice está nos limites da constant pool
-	cp_info	* cp_class_name = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Ref.class_index - 1;
-	printf("field class name: ");
-	PrintConstantUtf8(cp_class_name, stdout);
-	cp_aux = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Ref.name_and_type_index - 1;
-	cp_info * cp_field_name = (thread->jvm_stack)->current_constant_pool + cp_aux->u.NameAndType.name_index - 1;
-	
-	CLASS_DATA	* field_class = getClass(cp_class_name, jvm);
-	puts("Controle de acesso");
-	// CONTROLE DE ACESSO
-	if(!field_class){// se a classe do field não foi carregada
-		char	* class_name = cp_class_name->u.Utf8.bytes;
-		class_name[cp_class_name->u.Utf8.length] = '\0';
-		classLoading(class_name, &field_class, method->class_data, jvm);
-		classLinking(field_class, jvm);
-		classInitialization(field_class, jvm, thread);
-	}
-	else{
-		if(field_class != method->class_data){// Se o Field não for da mesma classe
-			// verifica se a classe do field é acessível pelo método corrente	
-			if(!(field_class->modifiers & ACC_PUBLIC) &
-			(field_class->classloader_reference != (method->class_data)->classloader_reference)){
-				puts("IllegalAccessError: acesso indevido à classe ou interface.");
-				exit(EXIT_FAILURE);
-			}
-		}
-	}	
+/*	if((method->bytecodes + method->code_length - 2) <= thread->program_counter){*/
+/*		puts("VerifyError: instrução sem a quantidade de argumentos correta.");*/
+/*		exit(EXIT_FAILURE);*/
+/*	}*/
+/*	*/
+/*	u1	indexbyte1 = *(thread->program_counter + 1);*/
+/*	u1	indexbyte2 = *(thread->program_counter + 2);*/
+/*	u2	index = (indexbyte1 << 8) | indexbyte2;*/
+/*	*/
+/*	// RESOLUÇÃO DO FIELD*/
+/*	cp_info	* cp_aux = (thread->jvm_stack)->current_constant_pool;*/
+/*	cp_aux = cp_aux + index - 1; // falta verificar se o indice está nos limites da constant pool*/
+/*	cp_info	* cp_class_name = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Ref.class_index - 1;*/
+/*	printf("field class name: ");*/
+/*	PrintConstantUtf8(cp_class_name, stdout);*/
+/*	cp_aux = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Ref.name_and_type_index - 1;*/
+/*	cp_info * cp_field_name = (thread->jvm_stack)->current_constant_pool + cp_aux->u.NameAndType.name_index - 1;*/
+/*	*/
+/*	CLASS_DATA	* field_class = getClass(cp_class_name, jvm);*/
+/*	puts("Controle de acesso");*/
+/*	// CONTROLE DE ACESSO*/
+/*	if(!field_class){// se a classe do field não foi carregada*/
+/*		char	* class_name = cp_class_name->u.Utf8.bytes;*/
+/*		class_name[cp_class_name->u.Utf8.length] = '\0';*/
+/*		classLoading(class_name, &field_class, method->class_data, jvm);*/
+/*		classLinking(field_class, jvm);*/
+/*		classInitialization(field_class, jvm, thread);*/
+/*	}*/
+/*	else{*/
+/*		if(field_class != method->class_data){// Se o Field não for da mesma classe*/
+/*			// verifica se a classe do field é acessível pelo método corrente	*/
+/*			if(!(field_class->modifiers & ACC_PUBLIC) &*/
+/*			(field_class->classloader_reference != (method->class_data)->classloader_reference)){*/
+/*				puts("IllegalAccessError: acesso indevido à classe ou interface.");*/
+/*				exit(EXIT_FAILURE);*/
+/*			}*/
+/*		}*/
+/*	}	*/
 	switch(* thread->program_counter){
 		case	getstatic:
-				getClassVariable(cp_field_name, field_class);
+/*				getClassVariable(cp_field_name, field_class);*/
 			break;
 		case	putstatic:
 			break;
@@ -433,9 +856,11 @@ void	invoke(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.invokedynamic*/
 	switch(* thread->program_counter){// PARA TESTAR O HELLOWORLD
 		case	invokespecial:
-			thread->program_counter += 3;
+			break;
+		case	invokevirtual:
 			break;
 	}
+	thread->program_counter += 3;
 }
 
 // handleObject	0xBB a 0xBE; 0xC5
@@ -445,6 +870,21 @@ void	handleObject(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.newarray*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.anewarray*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.arraylength*/
+/*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.multianewarray*/
+	switch(* thread->program_counter){// PARA TESTAR O HELLOWORLD
+		case	new:
+		case	anewarray:
+			thread->program_counter += 3;
+			break;
+		case	newarray:
+			thread->program_counter += 2;
+			break;
+		case	arraylength:
+			break;
+		case	multianewarray:
+			thread->program_counter += 4;
+			break;
+	}
 }
 
 // athrow	0xBF

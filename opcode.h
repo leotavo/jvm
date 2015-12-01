@@ -98,7 +98,7 @@
 #define		istore_3	0x3E
 #define		lstore_0	0x3F
 #define		lstore_1	0x40
-#define		lstore_2	0x41
+#define		lstore_2	0x41	
 #define		lstore_3	0x42
 #define		fstore_0	0x43
 #define		fstore_1	0x44
