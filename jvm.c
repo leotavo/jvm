@@ -224,6 +224,7 @@ Preparation: allocating memory for class variables and initializing the memory t
 		for(u2 i = 0; i < (cd->classfile)->fields_count; i++){
 			VARIABLE	* var = (VARIABLE *) malloc(sizeof(VARIABLE));
 			var->field_reference = cd->field_data + i;
+			(cd->field_data + i)->var = var;
 			
 			VALUE	* value = (VALUE *) malloc(sizeof(VALUE));
 			u2	descriptor_index = ((cd->field_data + i)->info)->descriptor_index;
@@ -295,7 +296,7 @@ Resolution: transforming symbolic references from the type into direct reference
 /*==========================================*/
 // função getClassName
 char	*	getClassName(CLASS_DATA * cd){
- 	cp_info	* cp_aux = (cd->classfile)->constant_pool + (cd->classfile)->this_class - 1;
+ 	cp_info	* cp_aux = cd->class_name;
  	char	* class_name = cp_aux->u.Utf8.bytes;
  	class_name[cp_aux->u.Utf8.length] = '\0';
  	return	class_name;
@@ -378,8 +379,8 @@ Executing the class's class initialization method, if it has one
 			classLinking(cd_super, jvm);
 			classInitialization(cd_super, jvm, thread);
 		}
-		executeMethod("<init>", cd, jvm, thread);
-		executeMethod("<clinit>", cd, jvm, thread);			
+/*		executeMethod("<init>", cd, jvm, thread);*/
+/*		executeMethod("<clinit>", cd, jvm, thread);			*/
 	}	
 }// fim da função classInitialization
 

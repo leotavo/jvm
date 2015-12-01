@@ -1071,48 +1071,100 @@ void	accessField(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.getfield*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.putfield*/
 
-/*	puts("accessField");*/
-/*	if((method->bytecodes + method->code_length - 2) <= thread->program_counter){*/
-/*		puts("VerifyError: instrução sem a quantidade de argumentos correta.");*/
-/*		exit(EXIT_FAILURE);*/
-/*	}*/
-/*	*/
-/*	u1	indexbyte1 = *(thread->program_counter + 1);*/
-/*	u1	indexbyte2 = *(thread->program_counter + 2);*/
-/*	u2	index = (indexbyte1 << 8) | indexbyte2;*/
-/*	*/
-/*	// RESOLUÇÃO DO FIELD*/
-/*	cp_info	* cp_aux = (thread->jvm_stack)->current_constant_pool;*/
-/*	cp_aux = cp_aux + index - 1; // falta verificar se o indice está nos limites da constant pool*/
-/*	cp_info	* cp_class_name = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Ref.class_index - 1;*/
-/*	printf("field class name: ");*/
-/*	PrintConstantUtf8(cp_class_name, stdout);*/
-/*	cp_aux = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Ref.name_and_type_index - 1;*/
-/*	cp_info * cp_field_name = (thread->jvm_stack)->current_constant_pool + cp_aux->u.NameAndType.name_index - 1;*/
-/*	*/
-/*	CLASS_DATA	* field_class = getClass(cp_class_name, jvm);*/
-/*	puts("Controle de acesso");*/
-/*	// CONTROLE DE ACESSO*/
-/*	if(!field_class){// se a classe do field não foi carregada*/
-/*		char	* class_name = cp_class_name->u.Utf8.bytes;*/
-/*		class_name[cp_class_name->u.Utf8.length] = '\0';*/
-/*		classLoading(class_name, &field_class, method->class_data, jvm);*/
-/*		classLinking(field_class, jvm);*/
-/*		classInitialization(field_class, jvm, thread);*/
-/*	}*/
-/*	else{*/
-/*		if(field_class != method->class_data){// Se o Field não for da mesma classe*/
-/*			// verifica se a classe do field é acessível pelo método corrente	*/
-/*			if(!(field_class->modifiers & ACC_PUBLIC) &*/
-/*			(field_class->classloader_reference != (method->class_data)->classloader_reference)){*/
-/*				puts("IllegalAccessError: acesso indevido à classe ou interface.");*/
-/*				exit(EXIT_FAILURE);*/
-/*			}*/
-/*		}*/
-/*	}	*/
+	if((method->bytecodes + method->code_length - 2) <= thread->program_counter){
+		puts("VerifyError: instrução sem a quantidade de argumentos correta.");
+		exit(EXIT_FAILURE);
+	}
+	
+	u1	indexbyte1 = *(thread->program_counter + 1);
+	u1	indexbyte2 = *(thread->program_counter + 2);
+	u2	index = (indexbyte1 << 8) | indexbyte2;
+	// RESOLUÇÃO DO FIELD
+	cp_info	* cp_aux = (thread->jvm_stack)->current_constant_pool;
+	cp_aux = cp_aux + index - 1; // falta verificar se o indice está nos limites da constant pool
+	cp_aux = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Ref.class_index - 1;
+
+	cp_info	* cp_class_name = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Class.name_index - 1;
+	
+	CLASS_DATA	* field_class = getClass(cp_class_name, jvm);
+	
+	cp_aux = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Ref.name_and_type_index - 1;
+	cp_info * cp_field_name = (thread->jvm_stack)->current_constant_pool + cp_aux->u.NameAndType.name_index - 1;
+	
+	// CONTROLE DE ACESSO
+	u1	* backupPC = thread->program_counter;
+	if(!field_class){// se a classe do field não foi carregada
+		char	* class_name = cp_class_name->u.Utf8.bytes;
+		class_name[cp_class_name->u.Utf8.length] = '\0';
+		classLoading(strcat(class_name, ".class"), &field_class, method->class_data, jvm);
+		classLinking(field_class, jvm);
+		classInitialization(field_class, jvm, thread);
+		thread->program_counter = backupPC;
+		
+	}
+	else{
+		if(field_class != method->class_data){// Se o Field não for da mesma classe
+			// verifica se a classe do field é acessível pelo método corrente	
+			if(!(field_class->modifiers & ACC_PUBLIC) &
+			(field_class->classloader_reference != (method->class_data)->classloader_reference)){
+				puts("IllegalAccessError: acesso indevido à classe ou interface.");
+				exit(EXIT_FAILURE);
+			}
+		}
+	}	
 	switch(* thread->program_counter){
-		case	getstatic:
-/*				getClassVariable(cp_field_name, field_class);*/
+		case	getstatic:;
+			VARIABLE	* var = getClassVariable(cp_field_name, field_class);
+
+			OPERAND	* operand = (OPERAND *) malloc(sizeof(OPERAND));
+			switch((var->value).type){
+				case	BYTE:
+					operand->value = (s4) (var->value).u.Byte.byte;
+					break;
+				case	CHAR:
+					operand->value = (u4) (var->value).u.Char.char_;
+					break;
+				case	FLOAT:
+					operand->value = (u4) (var->value).u.Float.float_;
+					break;
+				case	INT:
+					operand->value = (s4) (var->value).u.Integer.integer;
+					break;
+				case	REF_INST:
+					operand->value = (u4) (var->value).u.InstanceReference.reference;
+					break;
+				case	SHORT:
+					operand->value = (s4) (var->value).u.Short.short_;
+					break;
+				case	BOOLEAN:
+					operand->value = (u4) (var->value).u.Boolean.boolean;
+					break;
+				case	REF_ARRAY:
+					operand->value = (u4) (var->value).u.InstanceReference.reference;
+					break;
+				case	DOUBLE:
+				case	LONG:;
+					OPERAND	* operand2 = (OPERAND *) malloc(sizeof(OPERAND));
+					if((var->value).type == DOUBLE){
+						operand2->value = (u4) (var->value).u.Double.high_bytes;
+						operand->value = (u4) (var->value).u.Double.low_bytes;				
+					}
+					else{
+						operand2->value = (u4) (var->value).u.Long.high_bytes;
+						operand->value = (u4) (var->value).u.Long.low_bytes;	
+					}
+					operand2->prox = (thread->jvm_stack)->operand_stack;
+					(thread->jvm_stack)->operand_stack = operand;
+					printf("value = %" PRIu32 "\n", ((thread->jvm_stack)->operand_stack)->value);
+					break;
+				default:
+					puts("VerifyError: descritor de field inválido");
+					exit(EXIT_FAILURE);
+			}
+
+			operand->prox = (thread->jvm_stack)->operand_stack;
+			(thread->jvm_stack)->operand_stack = operand;
+			printf("value = %" PRIu32 "\n", ((thread->jvm_stack)->operand_stack)->value);
 			break;
 		case	putstatic:
 			break;
