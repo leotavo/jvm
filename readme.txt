@@ -14,21 +14,53 @@ $ ./teste.sh
 
 
 SITUAÇÃO ATUAL:
+
+Interpreter:
+FALTA:
+Tstore
+Tastore
+Tmul
+Tdiv
+Trem
+Tneg
+Tshl
+Tshr
+Tushr
+Tand
+Tor
+Txor
+Tinc
+i2T
+l2T
+f2T
+d2T
+Tcmp
+TcmpOP
+ifOP
+if_icmOP
+if_acmOP
+jump
+switch_
+Treturn
+accessField
+invoke
+handleObject
+athrow_
+properties
+monitor
+ifnull
+widejump
+breakpoint
+nonDefined
+impdep
+
+
 Loading: 
-- le o arquivo .class principal, e armazena no tipo classfile;
-- cria o class_data dentro da method_area, armazenando as informações do classfile;
-- cria uma instância da classe principal, e armazena no heap;
-- cria variáveis de classe (static fields) e variáveis de instância;
-- verifica erros estruturais no classfile (ausência ou extra bytes, versão suportada)
 => o que falta: 
 - Herança (herdar campos e metodos de superclasses) => FAZER EM TEMPO DE EXECUÇÃO, NA CHAMADA DE INSTRUCOES QUE REQUEIRAM FIELDS OU METODOS
 - inicializar fields com constant_value; = FAZER EM TEMPO DE EXECUÇÃO
 
 LinkingVerification:
-- verifica erros semânticos no classfile (índices para constantpool, descritores corretos, access_flags, atributos corretos)
-- verifica se superclasse final não é herdada; (TESTAR)
-- verifica se método final não é sobrecarregado; (TESTAR)
-- verifica se toda classe (exceto Object) possui uma superclasse
 => o que falta:
 - verificar outras regras da linguagem java que possam estar sendo violadas no classfile.
 - bytecodeVerifier: // FAZER EM TEMPO DE EXECUÇÃO
@@ -37,15 +69,6 @@ LinkingVerification:
 -- atribuição de valores à fields
 -- metodo invocado com o correto numero e tipo de argumentos;
 
-Initialization: 
-- inicializa a superclasse direta;
-- executa o método construtor da classe; // IGNORAR O METODO <INIT> de java/lang/Object
-
-Interpreter:
-- começa a executar o método main da classe principal
-- implementada lógica do interpretador e definidos os prototipos das funções das instruções da jvm.
-FALTA:
-- implementar as funções
 
 LinkingResolution
 - resolve referências simbólicas durante a execução do interpretador
