@@ -205,7 +205,7 @@ void	classLinkingVerification(CLASS_DATA *, JVM *);
 void	classLinkingPreparation(CLASS_DATA *, JVM *);
 void	classLinkingResolution(ClassFile *, JVM *);
 void	classInitialization(CLASS_DATA *, JVM *, THREAD *);
-void	executeMethod(char *, CLASS_DATA *, JVM *, THREAD *);
+void	executeMethod(char *, CLASS_DATA *, JVM *, THREAD *, void *);
 void	classUnloading(CLASS_DATA *, JVM *);
 attribute_info	* getCodeAttribute(METHOD_DATA *, CLASS_DATA *);
 char	*	getClassName(CLASS_DATA *);

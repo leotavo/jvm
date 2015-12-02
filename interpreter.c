@@ -39,6 +39,11 @@ void	interpreter(METHOD_DATA	* method, THREAD * thread, JVM * jvm){
 		// OBS: PROGRAM_COUNTER DEVE SER MODIFICADO AO EXECUTAR CADA INSTRUÇÃO, DE ACORDO COM A QUANTIDADE DE OPERANDOS.
 	}
 }
+
+void	printStack(THREAD * thread){
+	printf("Topo = %" PRIu32 "; 0x%" PRIX32, ((thread->jvm_stack)->operand_stack)->value, ((thread->jvm_stack)->operand_stack)->value);
+}
+
 /*==========================================*/
 //	INSTRUÇÕES
 
@@ -289,38 +294,38 @@ void	Tload(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.dload_n*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.aload_n*/
 	OPERAND	* operand = (OPERAND *) malloc(sizeof(OPERAND));
-	thread->program_counter++;
+	
 	u2 index;
-	index = (u1) *(thread->program_counter);
 	u4 *value = (u4*) malloc(sizeof(u4));
 	switch(*thread->program_counter){
-	case iload:
-	case lload:
-	case fload:
-	case dload:
-	case aload:
-		if (isWide){
-			index = index << 8;
-			thread->program_counter++;
-			index = index | *(thread->program_counter);
-			isWide = 0;
-		}
-		*value = (thread->jvm_stack)->local_variables[index];
-
-		operand->value = *value;
-		operand->prox = (thread->jvm_stack)->operand_stack;
-		(thread->jvm_stack)->operand_stack = operand;
-
-		if(*thread->program_counter == lload || *thread->program_counter == dload){
-			*value = (thread->jvm_stack)->local_variables[index + 1];
-
+		case iload:
+		case lload:
+		case fload:
+		case dload:
+		case aload:
+			index = (u2) *(thread->program_counter + 1);
+			if (isWide){
+				index = index << 8;
+				thread->program_counter++;
+				index = index | *(thread->program_counter);
+				isWide = 0;
+			}
+			*value = (thread->jvm_stack)->local_variables[index];
+	
 			operand->value = *value;
 			operand->prox = (thread->jvm_stack)->operand_stack;
 			(thread->jvm_stack)->operand_stack = operand;
-		}
-
-		thread->program_counter++;
-		break;
+	
+			if(*thread->program_counter == lload || *thread->program_counter == dload){
+				*value = (thread->jvm_stack)->local_variables[index + 1];
+	
+				operand->value = *value;
+				operand->prox = (thread->jvm_stack)->operand_stack;
+				(thread->jvm_stack)->operand_stack = operand;
+			}
+	
+			thread->program_counter++;
+			break;
 		case iload_0:
 		case iload_1:
 		case iload_2:
@@ -354,11 +359,12 @@ void	Tload(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 				index = 3;
 			}
 			*value = (thread->jvm_stack)->local_variables[index];
-
+			
 			operand->value = *value;
 			operand->prox = (thread->jvm_stack)->operand_stack;
 			(thread->jvm_stack)->operand_stack = operand;
-
+			
+			
 			thread->program_counter++;
 			break;
 		case lload_0:
@@ -400,6 +406,7 @@ void	Tload(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 			thread->program_counter++;
 			break;
 	}
+/*	printStack(thread);*/
 /*	free(operand);*/
 	free(value);
 }
@@ -1057,10 +1064,18 @@ void	Treturn(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.areturn*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.return*/
 	switch(* thread->program_counter){// PARA TESTAR O HELLOWORLD
-		case	return_:
-			(thread->program_counter)++;
+		case	return_:;
+			// retorna a execução ao método invocador;
+			FRAME	*	aux = thread->jvm_stack;
+			thread->jvm_stack = (thread->jvm_stack)->prox;
+			free(aux->local_variables);
+			if(aux->operand_stack){
+				free(aux->operand_stack);
+			}
+			free(aux);
 			break;
 	}
+	thread->program_counter += method->code_length;
 }
 
 // accessField	0xB2 a 0xB5
