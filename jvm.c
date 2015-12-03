@@ -146,7 +146,7 @@ The loading process consists of three basic activities. To load a type, the Java
 			exit(EXIT_FAILURE);
 		}
 		
-		if(!(((*cd)->method_data + i)->modifiers & ACC_ABSTRACT)){
+		if(!(((*cd)->method_data + i)->modifiers & ACC_ABSTRACT) && !(((*cd)->method_data + i)->modifiers & ACC_NATIVE)){
 			attribute_info	* code_attr = getCodeAttribute((*cd)->method_data + i, *cd);
 			if(!code_attr){
 				puts("VerifyError: No code attribute");
@@ -227,55 +227,53 @@ Preparation: allocating memory for class variables and initializing the memory t
 			var->field_reference = cd->field_data + i;
 			(cd->field_data + i)->var = var;
 			
-			VALUE	* value = (VALUE *) malloc(sizeof(VALUE));
 			u2	descriptor_index = ((cd->field_data + i)->info)->descriptor_index;
-			value->type = (cd->runtime_constant_pool + descriptor_index - 1)->u.Utf8.bytes[0];
-/*			printf("DEBUG:\tvalue->type = %c\n", value->type);*/
-			switch(value->type){
+			(var->value).type = (cd->runtime_constant_pool + descriptor_index - 1)->u.Utf8.bytes[0];
+/*			printf("DEBUG:\t(var->value).type = %c\n", (var->value).type);*/
+			switch((var->value).type){
 				case	BOOLEAN:
-					value->u.Boolean.boolean = 0;
+					(var->value).u.Boolean.boolean = 0;
 					break;
 				case	BYTE:
-					value->u.Byte.byte = 0;
+					(var->value).u.Byte.byte = 0;
 					break;
 				case	CHAR:
-					value->u.Char.char_ = 0;
+					(var->value).u.Char.char_ = 0;
 					break;
 				case	DOUBLE:
-					value->u.Double.high_bytes = 0;
-					value->u.Double.low_bytes = 0;
+					(var->value).u.Double.high_bytes = 0;
+					(var->value).u.Double.low_bytes = 0;
 					break;
 				case	FLOAT:
-					value->u.Float.float_ = 0;
+					(var->value).u.Float.float_ = 0;
 					break;
 				case	INT:
-					value->u.Integer.integer = 0;
+					(var->value).u.Integer.integer = 0;
 					break;
 				case	LONG:
-					value->u.Long.high_bytes = 0;
-					value->u.Long.low_bytes = 0;
+					(var->value).u.Long.high_bytes = 0;
+					(var->value).u.Long.low_bytes = 0;
 					break;
 				case	REF_INST:
-					value->u.InstanceReference.reference = NULL;
+					(var->value).u.InstanceReference.reference = NULL;
 					break;
 				case	SHORT:
-					value->u.Short.short_ = 0;
+					(var->value).u.Short.short_ = 0;
 					break;
 				case	REF_ARRAY:
-					value->u.ArrayReference.reference = NULL;
+					(var->value).u.ArrayReference.reference = NULL;
 					break;
 				default:
 					puts("VerifyError: Unknown type");
 					exit(EXIT_FAILURE);
 			}
 			u2	access_flags = (cd->field_data + i)->modifiers;
-			if(!(access_flags & ACC_FINAL)){
+/*			if(!(access_flags & ACC_FINAL)){*/
 				if((access_flags & ACC_STATIC) || ((cd->classfile)->access_flags & ACC_INTERFACE)){		
-/*					puts("DEBUG:\tCLASS_VARIABLE");*/
 					var->prox = cd->class_variables;
 					cd->class_variables = var;
 				}
-			}
+/*			}*/
 /*			else{*/
 /*/*				puts("DEBUG:\tINSTANCE_VARIABLE");*/
 /*				var->prox = obj->instance_variables;*/
@@ -351,6 +349,24 @@ CLASS_DATA	* getClass(cp_info * cp_class_name, JVM * jvm){
 /*==========================================*/
 // funcao getClassVariable
 VARIABLE	* getClassVariable(cp_info * cp_field_name, CLASS_DATA * field_class){
+	VARIABLE	* cv = field_class->class_variables;
+	
+	while(cv){
+		FIELD_DATA	* fr = cv->field_reference;
+		
+		char	*string1 = cp_field_name->u.Utf8.bytes;
+		string1[cp_field_name->u.Utf8.length];
+		
+		char	*string2 = ((cv->field_reference)->field_name)->u.Utf8.bytes;
+		string2[((cv->field_reference)->field_name)->u.Utf8.length];
+		if(!strcmp(string1, string2)){
+			return	cv;
+		}
+		else{
+			cv = cv->prox;
+		}
+	}
+	return	NULL;
 
 }
 
@@ -368,20 +384,21 @@ Executing the class's class initialization method, if it has one
 		cp_info	* cp_aux = (cd->classfile)->constant_pool + (cd->classfile)->super_class - 1;
 		cp_aux = (cd->classfile)->constant_pool + cp_aux->u.Class.name_index - 1;
 		char	* super_class_name = cp_aux->u.Utf8.bytes;
-		super_class_name[cp_aux->u.Utf8.length] = '\0';
+/*		super_class_name[cp_aux->u.Utf8.length] = '\0';*/
 /*		printf("Super class:\t");*/
 /*		PrintConstantUtf8(cp_aux, stdout);*/
 /*		puts("");*/
 /*		if(strcmp(super_class_name, "java/lang/Object")){*/
 			CLASS_DATA	* cd_super;
-			if(!(cd_super = getSuperClass(cd->classfile, jvm))){
+/*			if(!(cd_super = getSuperClass(cd->classfile, jvm))){*/
+			if(!(cd_super = getClass(cp_aux, jvm))){
 				classLoading(strcat(super_class_name, ".class"), &cd_super, cd, jvm);
 			}
 			classLinking(cd_super, jvm);
 			classInitialization(cd_super, jvm, thread);
 /*		}*/
 	}
-	executeMethod("<init>", cd, jvm, thread, cd);
+/*	executeMethod("<init>", cd, jvm, thread, cd);*/
 	executeMethod("<clinit>", cd, jvm, thread, cd);	
 }// fim da função classInitialization
 
@@ -418,9 +435,7 @@ attribute_info	* getCodeAttribute(METHOD_DATA * method, CLASS_DATA * cd){
 /*==========================================*/
 // função execute
 void	executeMethod(char * method_name, CLASS_DATA * cd, JVM * jvm, THREAD * thread, void * this){
-	printf("\nmétodo: ");
-	PrintConstantUtf8(cd->class_name, stdout);
-	printf(".%s\n", method_name);
+	
 	METHOD_DATA	* method = getMethod(method_name, cd);
 	if(method){
 		if(method->modifiers & ACC_ABSTRACT){
@@ -439,9 +454,15 @@ void	executeMethod(char * method_name, CLASS_DATA * cd, JVM * jvm, THREAD * thre
 			frame->prox = thread->jvm_stack;
 			thread->jvm_stack = frame;
 			
+			printf("\nmétodo: ");
+			PrintConstantUtf8(cd->class_name, stdout);
+			printf(".%s\n", method_name);
 			// CHAMA O INTERPRETADOR
 			interpreter(method, thread, jvm);
-			puts("end");
+			printf("\nEnd\t");
+			PrintConstantUtf8(cd->class_name, stdout);
+			printf(".%s\n", method_name);
+			
 		}
 		else{
 			puts("ERROR: non-abstract method without code attribute.");
@@ -474,4 +495,26 @@ void	jvmExit(JVM * jvm){
 }// fim da funçao jvmExit
 /*==========================================*/
 
+void	pushOperand(u4 word, FRAME * frame){
+	OPERAND	* aux = (OPERAND *) malloc(sizeof(OPERAND));
+	
+	aux->value = word;
+	aux->prox = frame->operand_stack;
+	frame->operand_stack = aux;
+}
 
+u4	popOperand(FRAME * frame){
+	if(frame->operand_stack){
+		OPERAND	* aux = frame->operand_stack;
+		frame->operand_stack = aux->prox;
+		u4	word = aux->value;
+		free(aux);
+		return	word;
+	}
+	else{
+		puts("StackUnderflowError");
+		exit(EXIT_FAILURE);
+	}
+}
+
+bool		isSuperClass(CLASS_DATA * cd1, CLASS_DATA * cd2){}
