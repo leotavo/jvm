@@ -7,7 +7,7 @@ Corretude do interpretador:
 ( ) array length; => handleObject
 ( ) inteiros; => todas as instruções com byte, char, short, int
 ( ) floats; => todas as instruções com float
-( ) desvios com cat 1; => jump, widejump
+( ) desvios com cat 1; => jump, widejump, ifOP, if_icmOP, if_acmOP, ifnull
 ( ) recursao; => invoke
 ( ) metodos estaticos; => invoke
 ( ) operações de retorno; => Treturn
@@ -35,11 +35,11 @@ Corretude do interpretador:
 opcionais:
 - Todas as demais instruções.
 ( ) threads;
-( ) debugs;
+( ) debugs; => breakpoint
 ( ) chamada às bibliotecas java;
-( ) tratamento de exceções;
-( ) checagem dinâmica de tipos;
-( ) coletor de lixo;
+( ) tratamento de exceções; => athrow, try_catch (tratamento de métodos)
+( ) checagem dinâmica de tipos; => properties
+( ) coletor de lixo; (monitoramento da heap)
 
 SITUAÇÃO ATUAL:
 
