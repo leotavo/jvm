@@ -1,8 +1,45 @@
-RECADOS: 
-
-
 MASTER ATUALIZADA. FAÇAM CLONE DELA ANTES DE FAZER CÒDIGO NOVO (01/12)
 ESCREVAM NO README QUAL FUNCAO VCS ESTAO MEXENDO!!!
+
+Corretude do interpretador:
+
+( ) arrays simples; => Taload, Tastore, handleObject
+( ) array length; => handleObject
+( ) inteiros; => todas as instruções com byte, char, short, int
+( ) floats; => todas as instruções com float
+( ) desvios com cat 1; => jump, widejump
+( ) recursao; => invoke
+( ) metodos estaticos; => invoke
+( ) operações de retorno; => Treturn
+( ) operações lógicas com cat 1; => Tneg, Tand, Tor, Txor
+( ) operações de deslocamento com cat 1; => Tshl, Tshr, Tushr
+( ) operações de manipulação de pilha; => Tload, Taload, Tstore, Tastore, Tipush, ldc_, Tconst, accessField, handleStack
+( ) iteracao e case => switch_
+( ) arrays multidimensionais; => Taload, Tastore, handleObject
+( ) arrays de referência; => Taload, Tastore, handleObject
+( ) objetos; => handleObject
+( ) métodos não estaticos; => invoke
+( ) longs; => todas as instruções com long
+( ) doubles; = todas as instruções com doubles
+( ) operações aritmeticas de cat 2; => Tadd, Tsub, Tmul, Tdiv, Trem.
+( ) operações de deslocamento de long; => Tshl, Tshr, Tushr
+( ) system.out.println (int, float, string, booleano); => invokespecial
+( ) conversao de e para cat 2; => i2T, l2T, f2T, d2T
+( ) strings; => ????
+( ) interfaces; => ????
+
+
+
+(X) leitura do formato .class (30% do interpretador)
+
+opcionais:
+- Todas as demais instruções.
+( ) threads;
+( ) debugs;
+( ) chamada às bibliotecas java;
+( ) tratamento de exceções;
+( ) checagem dinâmica de tipos;
+( ) coletor de lixo;
 
 SITUAÇÃO ATUAL:
 
@@ -32,9 +69,9 @@ if_icmOP
 if_acmOP
 jump
 switch_
-Treturn
-accessField => LEO
-invoke
+Treturn => return OK
+accessField => (LEO) getstatic e putstatic ok
+invoke => (LEO) implementada a resolução e controle de acesso aos métodos.
 handleObject
 athrow_
 properties
