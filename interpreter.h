@@ -24,6 +24,8 @@ extern	INSTRUCTION	func[];
 // INTERPRETADOR DE BYTECODES
 void	interpreter(METHOD_DATA	*, THREAD *, JVM * jvm);
 
+void	printStack(THREAD *);
+
 /*==========================================*/
 //	INSTRUÇÕES
 

@@ -133,7 +133,8 @@ typedef	struct	field_data{
 	cp_info	* field_descriptor; // CONSTANT_Utf8
 	TYPE	field_type;
 	u2	modifiers;	// access_flags	
-	field_info	* info; 
+	field_info	* info;
+	struct variable	* var;
 }FIELD_DATA;
 
 // VARIABLE
@@ -204,7 +205,7 @@ void	classLinkingVerification(CLASS_DATA *, JVM *);
 void	classLinkingPreparation(CLASS_DATA *, JVM *);
 void	classLinkingResolution(ClassFile *, JVM *);
 void	classInitialization(CLASS_DATA *, JVM *, THREAD *);
-void	executeMethod(char *, CLASS_DATA *, JVM *, THREAD *);
+void	executeMethod(char *, CLASS_DATA *, JVM *, THREAD *, void *);
 void	classUnloading(CLASS_DATA *, JVM *);
 attribute_info	* getCodeAttribute(METHOD_DATA *, CLASS_DATA *);
 char	*	getClassName(CLASS_DATA *);

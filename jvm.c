@@ -61,7 +61,7 @@ https://docs.oracle.com/javase/specs/jvms/se6/html/Concepts.doc.html#19042
 		puts("ERROR: method 'main' not find.");
 		exit(EXIT_FAILURE);
 	}
-	executeMethod("main", main_class_data, jvm, main_thread);
+	executeMethod("main", main_class_data, jvm, main_thread, main_class_data);
 	
 	classUnloading(main_class_data, jvm);
 	jvmExit(jvm);
@@ -88,6 +88,7 @@ The loading process consists of three basic activities. To load a type, the Java
 		exit(EXIT_FAILURE);
 	}
 	else{
+		printf("Carregando %s\n", class_filename);
 		cf = loadClassFile(class_binary_file);
 	}
 /*	puts("DEBUG:\tCRIANDO CLASS_DATA");*/
@@ -224,6 +225,7 @@ Preparation: allocating memory for class variables and initializing the memory t
 		for(u2 i = 0; i < (cd->classfile)->fields_count; i++){
 			VARIABLE	* var = (VARIABLE *) malloc(sizeof(VARIABLE));
 			var->field_reference = cd->field_data + i;
+			(cd->field_data + i)->var = var;
 			
 			VALUE	* value = (VALUE *) malloc(sizeof(VALUE));
 			u2	descriptor_index = ((cd->field_data + i)->info)->descriptor_index;
@@ -295,7 +297,7 @@ Resolution: transforming symbolic references from the type into direct reference
 /*==========================================*/
 // função getClassName
 char	*	getClassName(CLASS_DATA * cd){
- 	cp_info	* cp_aux = (cd->classfile)->constant_pool + (cd->classfile)->this_class - 1;
+ 	cp_info	* cp_aux = cd->class_name;
  	char	* class_name = cp_aux->u.Utf8.bytes;
  	class_name[cp_aux->u.Utf8.length] = '\0';
  	return	class_name;
@@ -370,17 +372,17 @@ Executing the class's class initialization method, if it has one
 /*		printf("Super class:\t");*/
 /*		PrintConstantUtf8(cp_aux, stdout);*/
 /*		puts("");*/
-		if(strcmp(super_class_name, "java/lang/Object")){
+/*		if(strcmp(super_class_name, "java/lang/Object")){*/
 			CLASS_DATA	* cd_super;
 			if(!(cd_super = getSuperClass(cd->classfile, jvm))){
 				classLoading(strcat(super_class_name, ".class"), &cd_super, cd, jvm);
 			}
 			classLinking(cd_super, jvm);
 			classInitialization(cd_super, jvm, thread);
-		}
-		executeMethod("<init>", cd, jvm, thread);
-		executeMethod("<clinit>", cd, jvm, thread);			
-	}	
+/*		}*/
+	}
+	executeMethod("<init>", cd, jvm, thread, cd);
+	executeMethod("<clinit>", cd, jvm, thread, cd);	
 }// fim da função classInitialization
 
 /*==========================================*/
@@ -415,7 +417,7 @@ attribute_info	* getCodeAttribute(METHOD_DATA * method, CLASS_DATA * cd){
 
 /*==========================================*/
 // função execute
-void	executeMethod(char * method_name, CLASS_DATA * cd, JVM * jvm, THREAD * thread){
+void	executeMethod(char * method_name, CLASS_DATA * cd, JVM * jvm, THREAD * thread, void * this){
 	printf("\nmétodo: ");
 	PrintConstantUtf8(cd->class_name, stdout);
 	printf(".%s\n", method_name);
@@ -430,6 +432,7 @@ void	executeMethod(char * method_name, CLASS_DATA * cd, JVM * jvm, THREAD * thre
 			// CRIA NOVO FRAME PRO MÉTODO
 			FRAME	* frame = (FRAME *) malloc(sizeof(FRAME));
 			frame->local_variables = (u4 *) malloc(method->locals_size * sizeof(u4));
+			frame->local_variables[0] = (u4) this;
 			frame->operand_stack = NULL;
 			frame->current_constant_pool = cd->runtime_constant_pool;
 			frame->return_value = NULL;
