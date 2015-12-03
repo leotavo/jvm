@@ -33,8 +33,9 @@ int	isWide = 0;
 //	INTERPRETADOR
 void	interpreter(METHOD_DATA	* method, THREAD * thread, JVM * jvm){
 	thread->program_counter = method->bytecodes;
+	printf("PC\tOPCODE");
 	while(thread->program_counter < (method->bytecodes + method->code_length)){	// enquanto houver instruções
-		printf("instrução %s\n", opcodes[* thread->program_counter]);
+		printf("\n%" PRIu8 "\t%s", thread->program_counter - method->bytecodes, opcodes[* thread->program_counter]);
 		func[* thread->program_counter](method, thread, jvm);
 		// OBS: PROGRAM_COUNTER DEVE SER MODIFICADO AO EXECUTAR CADA INSTRUÇÃO, DE ACORDO COM A QUANTIDADE DE OPERANDOS.
 	}
@@ -106,6 +107,7 @@ void	Tconst(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 			else{
 				operand->value = *value;
 			}
+/*			printf("value = %" PRIX32 "\n", operand->value);*/
 
 			operand->prox = (thread->jvm_stack)->operand_stack;
 			(thread->jvm_stack)->operand_stack = operand;
@@ -225,7 +227,7 @@ void	ldc_(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 	case ldc2_w:
 		if(*thread->program_counter == ldc){
 			thread->program_counter++;
-			index = (u1) *(thread->program_counter);
+			index = (u2) *(thread->program_counter);
 		}else if(*thread->program_counter == ldc_w || *thread->program_counter == ldc2_w){
 			thread->program_counter++;
 			high = *(thread->program_counter);
@@ -1094,28 +1096,44 @@ void	accessField(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 	u1	indexbyte1 = *(thread->program_counter + 1);
 	u1	indexbyte2 = *(thread->program_counter + 2);
 	u2	index = (indexbyte1 << 8) | indexbyte2;
+	printf("\t%" PRIu16, index);
 	// RESOLUÇÃO DO FIELD
+		// Nome da classe do field
 	cp_info	* cp_aux = (thread->jvm_stack)->current_constant_pool;
 	cp_aux = cp_aux + index - 1; // falta verificar se o indice está nos limites da constant pool
 	cp_aux = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Ref.class_index - 1;
-
 	cp_info	* cp_class_name = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Class.name_index - 1;
+/*	printf("field_class_name: ");*/
+/*	PrintConstantUtf8(cp_class_name, stdout);*/
 	
-	CLASS_DATA	* field_class = getClass(cp_class_name, jvm);
-	
+
+		// nome do field
+	cp_aux = (thread->jvm_stack)->current_constant_pool;
+	cp_aux = cp_aux + index - 1;
 	cp_aux = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Ref.name_and_type_index - 1;
-	cp_info * cp_field_name = (thread->jvm_stack)->current_constant_pool + cp_aux->u.NameAndType.name_index - 1;
+	cp_info	* cp_field_name = (thread->jvm_stack)->current_constant_pool + cp_aux->u.NameAndType.name_index - 1;
+/*	printf("\nfield_name: ");*/
+/*	PrintConstantUtf8(cp_field_name, stdout);*/
+
+		
+		// descritor do field
+	cp_info * cp_field_descriptor = (thread->jvm_stack)->current_constant_pool + cp_aux->u.NameAndType.descriptor_index - 1;
+/*	printf("\nfield_descriptor: ");*/
+/*	PrintConstantUtf8(cp_field_descriptor, stdout);*/
+/*	puts("");*/
 	
 	// CONTROLE DE ACESSO
 	u1	* backupPC = thread->program_counter;
+	CLASS_DATA	* field_class = getClass(cp_class_name, jvm);
 	if(!field_class){// se a classe do field não foi carregada
 		char	* class_name = cp_class_name->u.Utf8.bytes;
 		class_name[cp_class_name->u.Utf8.length] = '\0';
+		puts("");
 		classLoading(strcat(class_name, ".class"), &field_class, method->class_data, jvm);
 		classLinking(field_class, jvm);
 		classInitialization(field_class, jvm, thread);
 		thread->program_counter = backupPC;
-		
+		printf("\nResume %s\n", opcodes[*thread->program_counter]);
 	}
 	else{
 		if(field_class != method->class_data){// Se o Field não for da mesma classe
@@ -1127,10 +1145,16 @@ void	accessField(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 			}
 		}
 	}	
+
+	VARIABLE	* var = getClassVariable(cp_field_name, field_class);
+	
+	if(!var){
+		puts("NoSuchFieldError");
+		exit(EXIT_FAILURE);
+	}
+	
 	switch(* thread->program_counter){
 		case	getstatic:;
-			VARIABLE	* var = getClassVariable(cp_field_name, field_class);
-
 			OPERAND	* operand = (OPERAND *) malloc(sizeof(OPERAND));
 			switch((var->value).type){
 				case	BYTE:
@@ -1146,7 +1170,7 @@ void	accessField(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 					operand->value = (s4) (var->value).u.Integer.integer;
 					break;
 				case	REF_INST:
-					operand->value = (u4) (var->value).u.InstanceReference.reference;
+					operand->value = (u4) (var->value).u.ArrayReference.reference;
 					break;
 				case	SHORT:
 					operand->value = (s4) (var->value).u.Short.short_;
@@ -1179,9 +1203,48 @@ void	accessField(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 
 			operand->prox = (thread->jvm_stack)->operand_stack;
 			(thread->jvm_stack)->operand_stack = operand;
-			printf("value = %" PRIu32 "\n", ((thread->jvm_stack)->operand_stack)->value);
+/*			printf("value = %" PRIu32 "\n", ((thread->jvm_stack)->operand_stack)->value);*/
 			break;
 		case	putstatic:
+			switch((var->value).type){
+				case	BYTE:
+					(var->value).u.Byte.byte = (s1) popOperand(thread->jvm_stack);
+					break;
+				case	CHAR:
+					(var->value).u.Char.char_ = (u1) popOperand(thread->jvm_stack);
+					break;
+				case	FLOAT:
+					(var->value).u.Float.float_ = popOperand(thread->jvm_stack);
+					break;
+				case	INT:
+					(var->value).u.Integer.integer = (s4) popOperand(thread->jvm_stack);
+					break;
+				case	REF_INST:
+					(var->value).u.InstanceReference.reference = (OBJECT *) popOperand(thread->jvm_stack);
+/*					printf("%p\n" , (var->value).u.ArrayReference.reference);	*/
+					break;
+				case	SHORT:
+					(var->value).u.Short.short_ = (s2) popOperand(thread->jvm_stack);
+					break;
+				case	BOOLEAN:
+					(var->value).u.Boolean.boolean = (u1) popOperand(thread->jvm_stack);
+					break;
+				case	REF_ARRAY:
+					(var->value).u.ArrayReference.reference = (ARRAY *) popOperand(thread->jvm_stack);
+
+					break;
+				case	DOUBLE:
+					(var->value).u.Double.high_bytes = popOperand(thread->jvm_stack);
+					(var->value).u.Double.low_bytes = popOperand(thread->jvm_stack);
+					break;
+				case	LONG:
+					(var->value).u.Long.high_bytes = popOperand(thread->jvm_stack);
+					(var->value).u.Long.low_bytes = popOperand(thread->jvm_stack);
+					break;
+				default:
+					puts("VerifyError: descritor de field inválido");
+					exit(EXIT_FAILURE);
+			}
 			break;
 		case	getfield:
 			break;
@@ -1200,6 +1263,107 @@ void	invoke(METHOD_DATA * method, THREAD * thread, JVM * jvm){
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.invokestatic*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.invokeinterface*/
 /*https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.invokedynamic*/
+
+	u1	indexbyte1 = *(thread->program_counter + 1);
+	u1	indexbyte2 = *(thread->program_counter + 2);
+	u2	index = (indexbyte1 << 8) | indexbyte2;
+	printf("\t%" PRIu16, index);
+/*	https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-5.html#jvms-5.4.3.3*/
+	// RESOLUÇÃO DO MÈTODO
+	cp_info	* cp_aux = (thread->jvm_stack)->current_constant_pool;
+	cp_aux = cp_aux + index - 1; // falta verificar se o indice está nos limites da constant pool
+	cp_aux = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Ref.class_index - 1;
+
+		// nome da classe do método
+	cp_info	* cp_class_name = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Class.name_index - 1;
+	printf("\ncp_class_name: ");
+	PrintConstantUtf8(cp_class_name, stdout);
+	puts("");
+	
+		// nome do método
+	cp_aux = (thread->jvm_stack)->current_constant_pool;
+	cp_aux = cp_aux + index - 1;
+	cp_aux = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Ref.name_and_type_index - 1;
+	cp_info * cp_method_name = (thread->jvm_stack)->current_constant_pool + cp_aux->u.NameAndType.name_index - 1;
+	printf("cp_method_name: ");
+	PrintConstantUtf8(cp_method_name, stdout);
+	puts("");
+	
+		// descritor do método
+	cp_aux = (thread->jvm_stack)->current_constant_pool;
+	cp_aux = cp_aux + index - 1;
+	cp_aux = (thread->jvm_stack)->current_constant_pool + cp_aux->u.Ref.name_and_type_index - 1;
+	cp_info	* cp_method_descriptor = (thread->jvm_stack)->current_constant_pool + cp_aux->u.NameAndType.descriptor_index - 1;
+	printf("cp_method_descriptor: ");
+	PrintConstantUtf8(cp_method_descriptor, stdout);
+	puts("");
+	
+	// CONTROLE DE ACESSO
+/*	https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-5.html#jvms-5.4.4*/
+	u1	* backupPC = thread->program_counter;
+	CLASS_DATA	* method_class = getClass(cp_class_name, jvm);
+	if(!method_class){// se a classe do método não foi carregada, mesmo package
+		char	* class_name = cp_class_name->u.Utf8.bytes;
+		class_name[cp_class_name->u.Utf8.length] = '\0';
+		puts("");
+		classLoading(strcat(class_name, ".class"), &method_class, method->class_data, jvm);
+		classLinking(method_class, jvm);
+		classInitialization(method_class, jvm, thread);
+		thread->program_counter = backupPC;
+		printf("\nResume %s\n", opcodes[*thread->program_counter]);
+	}	
+	
+	char	* method_name = cp_method_name->u.Utf8.bytes;
+	method_name[cp_method_name->u.Utf8.length] = '\0';
+	
+	METHOD_DATA	* invoked_method = getMethod(method_name, method_class);
+	if(!(invoked_method->modifiers & ACC_PUBLIC)){// SE O MÉTODO NÃO É PUBLICO
+		if(invoked_method->modifiers & ACC_PROTECTED){ // SE O MÉTODO É PROTECTED
+			if(method->class_data != method_class){ // Se a classe do método invokado é diferente da classe método corrente
+				if(!isSuperClass(method->class_data, method_class)){
+				// Se a classe do método invokado é não é subclasse da classe método corrente 
+					if((method->class_data)->classloader_reference != method_class->classloader_reference){
+						if(!(invoked_method->modifiers & ACC_PRIVATE)){
+							puts("IllegalAccessError");
+							exit(EXIT_FAILURE);
+						}
+					}
+				}
+			}
+			else if(1/*NOT restricao static*/){
+				if(!(invoked_method->modifiers & ACC_PRIVATE)){
+					puts("IllegalAccessError");
+					exit(EXIT_FAILURE);
+				}
+			}
+			
+			
+			// restriçao static
+		
+		}
+		else if(!invoked_method->modifiers){// SE O MÉTODO É DEFAULT
+			if((method->class_data)->classloader_reference != (method_class)->classloader_reference){
+				if(!(invoked_method->modifiers & ACC_PRIVATE)){
+					puts("IllegalAccessError");
+					exit(EXIT_FAILURE);
+				}
+			}
+		}
+	}	
+
+
+/*	if(!method_class){*/
+/*		puts("\nNoSuchMethodError");*/
+/*		exit(EXIT_FAILURE);*/
+/*	}*/
+	
+/*	if(method_class->modifiers & ACC_INTERFACE){// se a classe do método for interface.*/
+/*		puts("\nIncompatibleClassChangeError");*/
+/*		exit(EXIT_FAILURE);*/
+/*	}*/
+	// faltando
+	
+	
 	switch(* thread->program_counter){// PARA TESTAR O HELLOWORLD
 		case	invokespecial:
 			break;
